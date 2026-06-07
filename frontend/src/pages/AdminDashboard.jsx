@@ -20,7 +20,6 @@ const AdminDashboard = () => {
   const [citasPorEstado, setCitasPorEstado] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const token = localStorage.getItem('token');
 
   useEffect(() => {
     cargarDatos();
@@ -32,17 +31,22 @@ const AdminDashboard = () => {
       setError('');
       
       console.log('🔵 Cargando datos de admin...');
-      console.log('🔗 API_URL:', API_URL);
+      console.log('🔗 API_URL (FORZADA):', API_URL);
       
-      // Configurar headers con token
+      const token = localStorage.getItem('token');
+      console.log('🔑 Token usado en petición:', token ? `${token.substring(0, 30)}...` : 'NO HAY TOKEN');
+      
       const config = {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       };
       
       // 1. Cargar estadísticas generales
       try {
         const statsRes = await axios.get(`${API_URL}/reports/stats`, config);
-        console.log('✅ Stats:', statsRes.data);
+        console.log('✅ Stats response:', statsRes.data);
         if (statsRes.data.success) {
           setStats(statsRes.data.data);
         }
@@ -225,12 +229,14 @@ const AdminDashboard = () => {
         <Row>
           <Col md={6} className="mb-4">
             <Card style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)', border: '1px solid #333' }}>
-              <Card.Header style={{ backgroundColor: '#1a1a1a', color: '#d4a017' }}>Distribución de Citas</Card.Header>
-              <Card.Body>
+              <Card.Header style={{ backgroundColor: '#1a1a1a', color: '#d4a017' }}>Distribución de Citas por Estado</Card.Header>
+              <Card.Body className="text-center">
                 {citasPorEstado.length > 0 ? (
-                  <Pie data={pieData} />
+                  <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+                    <Pie data={pieData} />
+                  </div>
                 ) : (
-                  <p className="text-muted text-center">No hay datos de citas por estado</p>
+                  <p className="text-muted">No hay datos de citas por estado</p>
                 )}
               </Card.Body>
             </Card>
