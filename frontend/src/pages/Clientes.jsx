@@ -3,7 +3,8 @@ import { Table, Button, Modal, Form, Toast, ToastContainer } from 'react-bootstr
 import { FaEdit, FaTrash, FaUserPlus } from 'react-icons/fa';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+// FORZAR URL DEL BACKEND EN RENDER
+const API_URL = 'https://sistema-citas-api.onrender.com/api';
 
 const Clientes = () => {
   const [clientes, setClientes] = useState([]);
@@ -31,14 +32,16 @@ const Clientes = () => {
 
   const cargarClientes = async () => {
     try {
+      console.log('🔵 Cargando clientes desde:', `${API_URL}/admin/usuarios`);
       const response = await axios.get(`${API_URL}/admin/usuarios`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('✅ Respuesta:', response.data);
       const todos = response.data.data;
       const soloClientes = todos.filter(u => u.rol === 'cliente');
       setClientes(soloClientes);
     } catch (error) {
-      console.error('Error al cargar clientes:', error);
+      console.error('❌ Error al cargar clientes:', error);
       showMessage('Error al cargar clientes', 'danger');
     }
   };
@@ -81,7 +84,6 @@ const Clientes = () => {
   const handleGuardar = async () => {
     try {
       if (editMode) {
-        // Actualizar cliente
         const response = await axios.put(
           `${API_URL}/admin/usuarios/${selectedCliente._id}`,
           {
@@ -99,7 +101,6 @@ const Clientes = () => {
           setShowModal(false);
         }
       } else {
-        // Crear nuevo cliente
         if (!formData.password) {
           showMessage('La contraseña es requerida', 'danger');
           return;
@@ -146,134 +147,156 @@ const Clientes = () => {
   };
 
   return (
-    <>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Gestión de Clientes</h2>
-        <Button variant="primary" onClick={handleAgregar}>
-          <FaUserPlus className="me-2" /> Agregar Cliente
-        </Button>
-      </div>
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundImage: 'url(/logo.png)',
+      backgroundSize: 'contain',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'repeat',
+      backgroundColor: '#000000',
+      position: 'relative'
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        zIndex: 0
+      }} />
+      
+      <div style={{ position: 'relative', zIndex: 1, padding: '20px' }}>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h2 style={{ color: '#d4a017' }}>Gestión de Clientes</h2>
+          <Button variant="primary" onClick={handleAgregar} style={{ backgroundColor: '#d4a017', border: 'none' }}>
+            <FaUserPlus className="me-2" /> Agregar Cliente
+          </Button>
+        </div>
 
-      <Table striped bordered hover responsive>
-        <thead>
-          <tr>
-            <th>Nombre</th>
-            <th>Email</th>
-            <th>Teléfono</th>
-            <th>Fecha Registro</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          {clientes.map(cliente => (
-            <tr key={cliente._id}>
-              <td>{cliente.nombre}</td>
-              <td>{cliente.email}</td>
-              <td>{cliente.telefono}</td>
-              <td>{new Date(cliente.createdAt).toLocaleDateString()}</td>
-              <td>
-                <Button 
-                  variant="warning" 
-                  size="sm" 
-                  className="me-2"
-                  onClick={() => handleEditar(cliente)}
-                >
-                  <FaEdit />
-                </Button>
-                <Button 
-                  variant="danger" 
-                  size="sm"
-                  onClick={() => handleEliminar(cliente._id, cliente.nombre)}
-                >
-                  <FaTrash />
-                </Button>
-              </td>
-            </tr>
-          ))}
-          {clientes.length === 0 && (
-            <tr>
-              <td colSpan="5" className="text-center">No hay clientes registrados</td>
-            </tr>
-          )}
-        </tbody>
-      </Table>
+        <div className="table-responsive">
+          <table className="table table-dark table-hover">
+            <thead>
+              <tr>
+                <th style={{ color: '#d4a017' }}>Nombre</th>
+                <th style={{ color: '#d4a017' }}>Email</th>
+                <th style={{ color: '#d4a017' }}>Teléfono</th>
+                <th style={{ color: '#d4a017' }}>Fecha Registro</th>
+                <th style={{ color: '#d4a017' }}>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clientes.map(cliente => (
+                <tr key={cliente._id}>
+                  <td style={{ color: '#fff' }}>{cliente.nombre}</td>
+                  <td style={{ color: '#fff' }}>{cliente.email}</td>
+                  <td style={{ color: '#fff' }}>{cliente.telefono}</td>
+                  <td style={{ color: '#fff' }}>{new Date(cliente.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <Button 
+                      variant="warning" 
+                      size="sm" 
+                      className="me-2"
+                      onClick={() => handleEditar(cliente)}
+                    >
+                      <FaEdit />
+                    </Button>
+                    <Button 
+                      variant="danger" 
+                      size="sm"
+                      onClick={() => handleEliminar(cliente._id, cliente.nombre)}
+                    >
+                      <FaTrash />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+              {clientes.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center" style={{ color: '#fff' }}>No hay clientes registrados</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
 
-      {/* Modal para agregar/editar */}
-      <Modal show={showModal} onHide={() => setShowModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>{editMode ? 'Editar Cliente' : 'Agregar Cliente'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Nombre *</Form.Label>
-              <Form.Control
-                type="text"
-                name="nombre"
-                value={formData.nombre}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Email *</Form.Label>
-              <Form.Control
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
-            
-            {!editMode && (
+        {/* Modal para agregar/editar */}
+        <Modal show={showModal} onHide={() => setShowModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>{editMode ? 'Editar Cliente' : 'Agregar Cliente'}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
               <Form.Group className="mb-3">
-                <Form.Label>Contraseña *</Form.Label>
+                <Form.Label>Nombre *</Form.Label>
                 <Form.Control
-                  type="password"
-                  name="password"
-                  value={formData.password}
+                  type="text"
+                  name="nombre"
+                  value={formData.nombre}
                   onChange={handleInputChange}
                   required
                 />
               </Form.Group>
-            )}
-            
-            <Form.Group className="mb-3">
-              <Form.Label>Teléfono *</Form.Label>
-              <Form.Control
-                type="text"
-                name="telefono"
-                value={formData.telefono}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowModal(false)}>
-            Cancelar
-          </Button>
-          <Button variant="primary" onClick={handleGuardar}>
-            {editMode ? 'Actualizar' : 'Guardar'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+              
+              <Form.Group className="mb-3">
+                <Form.Label>Email *</Form.Label>
+                <Form.Control
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Form.Group>
+              
+              {!editMode && (
+                <Form.Group className="mb-3">
+                  <Form.Label>Contraseña *</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    required
+                  />
+                </Form.Group>
+              )}
+              
+              <Form.Group className="mb-3">
+                <Form.Label>Teléfono *</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="telefono"
+                  value={formData.telefono}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="primary" onClick={handleGuardar}>
+              {editMode ? 'Actualizar' : 'Guardar'}
+            </Button>
+          </Modal.Footer>
+        </Modal>
 
-      {/* Toast para mensajes */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide bg={toastVariant}>
-          <Toast.Header>
-            <strong className="me-auto">Notificación</strong>
-          </Toast.Header>
-          <Toast.Body className={toastVariant === 'danger' ? 'text-white' : ''}>
-            {toastMessage}
-          </Toast.Body>
-        </Toast>
-      </ToastContainer>
-    </>
+        {/* Toast para mensajes */}
+        <ToastContainer position="top-end" className="p-3">
+          <Toast show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide bg={toastVariant}>
+            <Toast.Header>
+              <strong className="me-auto">Notificación</strong>
+            </Toast.Header>
+            <Toast.Body className={toastVariant === 'danger' ? 'text-white' : ''}>
+              {toastMessage}
+            </Toast.Body>
+          </Toast>
+        </ToastContainer>
+      </div>
+    </div>
   );
 };
 
