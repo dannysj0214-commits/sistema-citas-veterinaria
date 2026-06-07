@@ -3,7 +3,8 @@ import { Card, Button, Table, Modal, Form, Row, Col, Alert, Badge } from 'react-
 import { FaPlus, FaEdit, FaTrash, FaStethoscope, FaDollarSign, FaClock, FaLightbulb } from 'react-icons/fa';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+// FORZAR URL DEL BACKEND EN RENDER
+const API_URL = 'https://sistema-citas-api.onrender.com/api';
 
 // Servicios sugeridos predefinidos
 const SERVICIOS_SUGERIDOS = [
@@ -16,12 +17,7 @@ const SERVICIOS_SUGERIDOS = [
   { nombre: 'Urgencias 24h', duracion: 90, precio: 150000, descripcion: 'Atención de urgencias veterinarias' },
   { nombre: 'Hospitalización', duracion: 90, precio: 180000, descripcion: 'Hospitalización por día' },
   { nombre: 'Baño y Corte', duracion: 90, precio: 60000, descripcion: 'Baño medicinal, corte de uñas, limpieza' },
-  { nombre: 'Odontología', duracion: 90, precio: 120000, descripcion: 'Limpieza dental, extracciones' },
-  { nombre: 'Ecografía', duracion: 90, precio: 150000, descripcion: 'Estudio ecográfico' },
-  { nombre: 'Radiografía', duracion: 90, precio: 100000, descripcion: 'Radiografías diagnósticas' },
-  { nombre: 'Laboratorio Clínico', duracion: 90, precio: 80000, descripcion: 'Análisis de sangre, orina, heces' },
-  { nombre: 'Consulta Nutricional', duracion: 90, precio: 70000, descripcion: 'Asesoría nutricional para mascotas' },
-  { nombre: 'Esterilización', duracion: 90, precio: 250000, descripcion: 'Esterilización de machos y hembras' }
+  { nombre: 'Odontología', duracion: 90, precio: 120000, descripcion: 'Limpieza dental, extracciones' }
 ];
 
 const ServiciosProfesional = ({ profesionalId, token }) => {
@@ -47,12 +43,15 @@ const ServiciosProfesional = ({ profesionalId, token }) => {
   const cargarServicios = async () => {
     try {
       setLoading(true);
+      setError('');
+      console.log('🔵 Cargando servicios desde:', `${API_URL}/services/mis-servicios`);
       const response = await axios.get(`${API_URL}/services/mis-servicios`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('✅ Servicios cargados:', response.data);
       setServicios(response.data.data || []);
     } catch (error) {
-      console.error('Error cargando servicios:', error);
+      console.error('❌ Error cargando servicios:', error);
       setError('Error al cargar los servicios');
     } finally {
       setLoading(false);
@@ -140,11 +139,11 @@ const ServiciosProfesional = ({ profesionalId, token }) => {
   };
 
   return (
-    <Card className="shadow-sm">
-      <Card.Header className="bg-success text-white">
+    <Card className="shadow-sm" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)', border: '1px solid #333' }}>
+      <Card.Header style={{ backgroundColor: '#1a1a1a', color: '#d4a017', borderBottom: '1px solid #333' }}>
         <div className="d-flex justify-content-between align-items-center">
           <h5 className="mb-0"><FaStethoscope className="me-2" />Mis Servicios</h5>
-          <Button variant="light" size="sm" onClick={() => handleOpenModal()}>
+          <Button variant="primary" size="sm" onClick={() => handleOpenModal()} style={{ backgroundColor: '#d4a017', border: 'none' }}>
             <FaPlus className="me-1" /> Agregar Servicio
           </Button>
         </div>
@@ -154,25 +153,25 @@ const ServiciosProfesional = ({ profesionalId, token }) => {
         {success && <Alert variant="success">{success}</Alert>}
 
         <div className="table-responsive">
-          <Table striped bordered hover>
+          <Table variant="dark" striped bordered hover>
             <thead>
               <tr>
-                <th>Servicio</th>
-                <th>Duración</th>
-                <th>Precio</th>
-                <th>Descripción</th>
-                <th>Acciones</th>
+                <th style={{ color: '#d4a017' }}>Servicio</th>
+                <th style={{ color: '#d4a017' }}>Duración</th>
+                <th style={{ color: '#d4a017' }}>Precio</th>
+                <th style={{ color: '#d4a017' }}>Descripción</th>
+                <th style={{ color: '#d4a017' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
               {servicios.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="text-center">No hay servicios registrados</td>
+                  <td colSpan="5" className="text-center" style={{ color: '#fff' }}>No hay servicios registrados</td>
                 </tr>
               ) : (
                 servicios.map(servicio => (
                   <tr key={servicio._id}>
-                    <td><strong>{servicio.nombre}</strong></td>
+                    <td style={{ color: '#fff' }}><strong>{servicio.nombre}</strong></td>
                     <td>
                       <Badge bg="info">
                         <FaClock className="me-1" /> {servicio.duracion} min
@@ -183,7 +182,7 @@ const ServiciosProfesional = ({ profesionalId, token }) => {
                         <FaDollarSign className="me-1" /> ${servicio.precio.toLocaleString()}
                       </Badge>
                     </td>
-                    <td>{servicio.descripcion || '-'}</td>
+                    <td style={{ color: '#fff' }}>{servicio.descripcion || '-'}</td>
                     <td>
                       <Button 
                         variant="warning" 
@@ -222,6 +221,7 @@ const ServiciosProfesional = ({ profesionalId, token }) => {
                 size="sm"
                 onClick={() => aplicarServicioSugerido(sug)}
                 title={sug.descripcion}
+                style={{ borderColor: '#d4a017', color: '#d4a017' }}
               >
                 {sug.nombre} - ${sug.precio.toLocaleString()}
               </Button>
@@ -292,7 +292,7 @@ const ServiciosProfesional = ({ profesionalId, token }) => {
           <Button variant="secondary" onClick={() => setShowModal(false)}>
             Cancelar
           </Button>
-          <Button variant="primary" onClick={handleSave} disabled={loading}>
+          <Button variant="primary" onClick={handleSave} disabled={loading} style={{ backgroundColor: '#d4a017', border: 'none' }}>
             {loading ? 'Guardando...' : 'Guardar Servicio'}
           </Button>
         </Modal.Footer>
