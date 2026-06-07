@@ -1,12 +1,16 @@
 import axios from 'axios';
 
-// Usar la variable de entorno de Netlify o Render
-const API_URL = import.meta.env.VITE_API_URL || 'https://sistema-citas-api.onrender.com/api';
+// FORZAR LA URL DEL BACKEND EN RENDER (Netlify no está leyendo la variable)
+const API_URL = 'https://sistema-citas-api.onrender.com/api';
 
-console.log('🔗 API_URL configurada:', API_URL);
+// Intentar usar variable de entorno si existe (para desarrollo local)
+const finalAPIUrl = import.meta.env.DEV ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api') : API_URL;
+
+console.log('🔗 API_URL configurada:', finalAPIUrl);
+console.log('🔧 Modo:', import.meta.env.DEV ? 'Desarrollo Local' : 'Producción');
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: finalAPIUrl,
   headers: {
     'Content-Type': 'application/json'
   },
