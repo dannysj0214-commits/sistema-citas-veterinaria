@@ -15,30 +15,44 @@ const adminRoutes = require('./src/routes/admin');
 
 const app = express();
 
-// ========== CONFIGURACIÓN CORS COMPLETA ==========
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://localhost:3000',
-  'http://localhost:5000',
-  'https://sistema-citas-api.onrender.com',
-  'https://sistemaveterinaria.netlify.app',
-  'https://sistema-citas-frontend.onrender.com'
-];
+// Mostrar configuración de .env
+console.log('📁 .env cargado - MONGO_URI:', process.env.MONGO_URI);
 
+// ========== CONFIGURACIÓN CORS ==========
 app.use(cors({
   origin: function(origin, callback) {
+    // Permitir solicitudes sin origen (Postman, curl)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      console.log(`❌ CORS bloqueado: ${origin}`);
-      return callback(new Error('CORS policy error'), false);
+    
+    // Permitir todos los localhost para desarrollo
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
     }
-    return callback(null, true);
+    
+    // Lista blanca para producción
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://localhost:3000',
+      'http://localhost:5000',
+      'https://sistema-citas-api.onrender.com',
+      'https://sistemaveterinaria.netlify.app',
+      'https://sistema-citas-frontend.onrender.com'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log(`⚠️ CORS bloqueado: ${origin}`);
+      callback(null, true); // Permite pero registra
+    }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
+// Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -61,34 +75,37 @@ app.get('/', (req, res) => {
   res.json({
     nombre: 'Sistema de Gestión de Citas para Servicios Profesionales',
     version: '2.0.0',
-    status: 'online',
-    endpoints: {
-      health: 'GET /api/health',
-      auth: 'POST /api/auth/login, POST /api/auth/register, GET /api/auth/profile',
-      professionals: 'GET /api/auth/profesionales',
-      appointments: 'GET/POST /api/appointments, GET /api/appointments/cliente',
-      services: 'GET /api/services/profesional/:id, POST /api/services',
-      availability: 'GET/POST /api/availability',
-      notifications: 'GET /api/notifications',
-      reports: 'GET /api/reports/stats',
-      admin: 'GET /api/admin/usuarios, GET /api/admin/stats',
-      medicalRecords: 'POST /api/medical-records/professional, GET /api/medical-records/:id'
-    }
+    status: 'online'
   });
 });
 
 // ========== CONEXIÓN A MONGODB ==========
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGO_URI;
-    if (!mongoURI) {
-      console.error('❌ MONGO_URI no está definida');
-      return;
+    // Usar variable de entorno o forzar localhost
+    let mongoURI = process.env.MONGO_URI;
+    
+    // Si no hay variable de entorno o es inválida, usar localhost
+    if (!mongoURI || mongoURI === 'undefined') {
+      console.log('⚠️ MONGO_URI no definida, usando localhost');
+      mongoURI = 'mongodb://localhost:27017/sistema_citas';
     }
+    
+    console.log(`🔧 Conectando a: ${mongoURI}`);
+    
     await mongoose.connect(mongoURI);
-    console.log('✅ Conectado a MongoDB Atlas correctamente');
+    
+    // Detectar qué base de datos se está usando
+    if (mongoURI.includes('mongodb+srv')) {
+      console.log('✅ Conectado a MongoDB ATLAS (nube)');
+    } else if (mongoURI.includes('localhost') || mongoURI.includes('127.0.0.1')) {
+      console.log('✅ Conectado a MongoDB LOCAL');
+    } else {
+      console.log('✅ Conectado a MongoDB');
+    }
   } catch (error) {
     console.error('❌ Error de conexión a MongoDB:', error.message);
+    console.log('⚠️ Reintentando en 5 segundos...');
     setTimeout(connectDB, 5000);
   }
 };
@@ -100,12 +117,16 @@ mongoose.connection.on('disconnected', () => {
   connectDB();
 });
 
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Error en MongoDB:', err);
+});
+
 // ========== INICIAR SERVIDOR ==========
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 ========================================`);
   console.log(`📡 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🌐 URL: https://sistema-citas-api.onrender.com`);
-  console.log(`🔗 API Health: https://sistema-citas-api.onrender.com/api/health`);
+  console.log(`🌐 URL: http://localhost:${PORT}`);
+  console.log(`🔗 API Health: http://localhost:${PORT}/api/health`);
   console.log(`========================================\n`);
 });

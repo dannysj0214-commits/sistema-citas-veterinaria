@@ -62,7 +62,7 @@ router.post('/register', async (req, res) => {
 // ========== INICIO DE SESIÓN ==========
 router.post('/login', async (req, res) => {
   try {
-    console.log('🔐 Login - Email:', req.body.email);
+    console.log('🔐 Login intento:', req.body.email);
     
     const { email, password } = req.body;
     
@@ -77,14 +77,28 @@ router.post('/login', async (req, res) => {
     }
     
     console.log('✅ Usuario encontrado:', user.email);
+    console.log('🔑 Hash guardado:', user.password);
     
-    const isMatch = await bcrypt.compare(password, user.password);
+    // Comparar contraseña (funciona tanto con texto plano como con hash)
+    let isMatch = false;
+    
+    // Si la contraseña guardada comienza con $2a$, es un hash de bcrypt
+    if (user.password.startsWith('$2a$')) {
+      isMatch = await bcrypt.compare(password, user.password);
+      console.log('🔐 Comparando con bcrypt');
+    } else {
+      // Comparación directa para contraseñas en texto plano (útil para migración)
+      isMatch = (password === user.password);
+      console.log('🔐 Comparando en texto plano');
+    }
+    
     console.log('🔐 ¿Contraseña válida?', isMatch);
     
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
     
+    // Crear token
     const token = jwt.sign(
       { id: user._id, email: user.email, rol: user.rol },
       process.env.JWT_SECRET || 'mi_secreto_super_seguro',
@@ -101,7 +115,9 @@ router.post('/login', async (req, res) => {
         id: user._id,
         nombre: user.nombre,
         email: user.email,
-        rol: user.rol
+        rol: user.rol,
+        telefono: user.telefono,
+        especialidad: user.especialidad
       }
     });
   } catch (error) {

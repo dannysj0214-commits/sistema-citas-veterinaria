@@ -39,7 +39,6 @@ const NavigationBar = () => {
   return (
     <Navbar style={{ backgroundColor: '#000000', borderBottom: '1px solid #222222', padding: '10px 25px' }}>
       <Navbar.Brand style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🐕</div>
         <div>
           <span style={{ fontWeight: 'bold', fontSize: '0.9rem', color: '#ffffff' }}>VETERINARIA</span>
           <small style={{ display: 'block', fontSize: '7px', color: '#999999' }}>LA VOZ DE LOS QUE NO TIENEN VOZ</small>
