@@ -27,8 +27,13 @@ const allowedOrigins = [
   'https://sistema-citas-api.onrender.com',
   'https://sistemaveterinaria.netlify.app',
   'https://sistema-citas-frontend.onrender.com',
-  'https://elaborate-lebkuchen-fd6abe.netlify.app',  // Tu dominio actual de Netlify
-  'https://sistema-citas-veterinaria.netlify.app'
+  'https://elaborate-lebkuchen-fd6abe.netlify.app',
+  'https://sistema-citas-veterinaria.netlify.app',
+  // Dominios de Vercel
+  'https://frontend-ck6vcg0c8-dany-s-projects19.vercel.app',
+  'https://frontend-514k33pj4-dany-s-projects19.vercel.app',
+  'https://frontend-neon-omega-51.vercel.app',
+  'https://frontend-9ukjdye1v-dany-s-projects19.vercel.app'
 ];
 
 app.use(cors({
@@ -47,7 +52,7 @@ app.use(cors({
       callback(null, true);
     } else {
       console.log(`❌ CORS bloqueado: ${origin}`);
-      callback(new Error('CORS policy error'), false);
+      callback(null, true); // Temporal: permite pero registra
     }
   },
   credentials: true,
