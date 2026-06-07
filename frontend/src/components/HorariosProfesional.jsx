@@ -1,0 +1,253 @@
+import React, { useState, useEffect } from 'react';
+import { Card, Button, Table, Modal, Form, Row, Col, Alert, Badge } from 'react-bootstrap';
+import { FaPlus, FaEdit, FaTrash, FaClock, FaCalendarWeek } from 'react-icons/fa';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:5000/api';
+
+const HorariosProfesional = ({ profesionalId, token }) => {
+  const [horarios, setHorarios] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedHorario, setSelectedHorario] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const [formData, setFormData] = useState({
+    dia_semana: 1,
+    hora_inicio: '08:00',
+    hora_fin: '18:00'
+  });
+
+  const diasSemana = [
+    { id: 1, nombre: 'Lunes' },
+    { id: 2, nombre: 'Martes' },
+    { id: 3, nombre: 'Miércoles' },
+    { id: 4, nombre: 'Jueves' },
+    { id: 5, nombre: 'Viernes' },
+    { id: 6, nombre: 'Sábado' }
+  ];
+
+  useEffect(() => {
+    cargarHorarios();
+  }, []);
+
+  const cargarHorarios = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/availability/mis-horarios`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setHorarios(response.data.data || []);
+    } catch (error) {
+      console.error('Error cargando horarios:', error);
+      setError('Error al cargar los horarios');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenModal = (horario = null) => {
+    if (horario) {
+      setEditMode(true);
+      setSelectedHorario(horario);
+      setFormData({
+        dia_semana: horario.dia_semana,
+        hora_inicio: horario.hora_inicio,
+        hora_fin: horario.hora_fin
+      });
+    } else {
+      setEditMode(false);
+      setSelectedHorario(null);
+      setFormData({
+        dia_semana: 1,
+        hora_inicio: '08:00',
+        hora_fin: '18:00'
+      });
+    }
+    setShowModal(true);
+  };
+
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`${API_URL}/availability`, formData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        setSuccess('Horario guardado correctamente');
+        cargarHorarios();
+        setShowModal(false);
+        setTimeout(() => setSuccess(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error guardando horario:', error);
+      setError(error.response?.data?.message || 'Error al guardar el horario');
+      setTimeout(() => setError(''), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('¿Estás seguro de eliminar este horario?')) {
+      try {
+        await axios.delete(`${API_URL}/availability/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSuccess('Horario eliminado correctamente');
+        cargarHorarios();
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (error) {
+        console.error('Error eliminando horario:', error);
+        setError('Error al eliminar el horario');
+        setTimeout(() => setError(''), 3000);
+      }
+    }
+  };
+
+  const getDiaNombre = (id) => {
+    const dia = diasSemana.find(d => d.id === id);
+    return dia ? dia.nombre : 'Desconocido';
+  };
+
+  return (
+    <Card className="shadow-sm mb-4">
+      <Card.Header className="bg-info text-white">
+        <div className="d-flex justify-content-between align-items-center">
+          <h5 className="mb-0"><FaClock className="me-2" />Horarios de Atención (90 min por cita)</h5>
+          <Button variant="light" size="sm" onClick={() => handleOpenModal()}>
+            <FaPlus className="me-1" /> Agregar Horario
+          </Button>
+        </div>
+      </Card.Header>
+      <Card.Body>
+        {error && <Alert variant="danger">{error}</Alert>}
+        {success && <Alert variant="success">{success}</Alert>}
+
+        <div className="table-responsive">
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Día</th>
+                <th>Hora Inicio</th>
+                <th>Hora Fin</th>
+                <th>Duración por Cita</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {horarios.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center">No hay horarios configurados</td>
+                </tr>
+              ) : (
+                horarios.map(horario => (
+                  <tr key={horario._id}>
+                    <td><strong>{getDiaNombre(horario.dia_semana)}</strong></td>
+                    <td>{horario.hora_inicio}</td>
+                    <td>{horario.hora_fin}</td>
+                    <td>
+                      <Badge bg="primary">90 minutos</Badge>
+                    </td>
+                    <td>
+                      <Button 
+                        variant="warning" 
+                        size="sm" 
+                        className="me-2"
+                        onClick={() => handleOpenModal(horario)}
+                      >
+                        <FaEdit />
+                      </Button>
+                      <Button 
+                        variant="danger" 
+                        size="sm"
+                        onClick={() => handleDelete(horario._id)}
+                      >
+                        <FaTrash />
+                      </Button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </Table>
+        </div>
+
+        <div className="mt-3 p-2 bg-light rounded">
+          <small className="text-muted">
+            <FaCalendarWeek className="me-1" />
+            <strong>Nota:</strong> Las citas tendrán una duración de 90 minutos. 
+            Los horarios se generan automáticamente en intervalos de 90 minutos desde la hora de inicio hasta la hora de fin.
+          </small>
+        </div>
+      </Card.Body>
+
+      {/* Modal para agregar/editar horario */}
+      <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>{editMode ? 'Editar Horario' : 'Agregar Horario'}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Día de la semana *</Form.Label>
+              <Form.Select
+                value={formData.dia_semana}
+                onChange={(e) => setFormData({ ...formData, dia_semana: parseInt(e.target.value) })}
+              >
+                {diasSemana.map(dia => (
+                  <option key={dia.id} value={dia.id}>{dia.nombre}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Hora de Inicio *</Form.Label>
+                  <Form.Control
+                    type="time"
+                    value={formData.hora_inicio}
+                    onChange={(e) => setFormData({ ...formData, hora_inicio: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Hora de Fin *</Form.Label>
+                  <Form.Control
+                    type="time"
+                    value={formData.hora_fin}
+                    onChange={(e) => setFormData({ ...formData, hora_fin: e.target.value })}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Alert variant="info">
+              <strong>Información:</strong>
+              <ul className="mb-0 mt-2">
+                <li>Las citas tendrán una duración de <strong>90 minutos</strong></li>
+                <li>Los horarios disponibles se generan automáticamente en intervalos de 90 minutos</li>
+                <li>Ejemplo: Si inicia a las 08:00, los horarios serán: 08:00, 09:30, 11:00, etc.</li>
+              </ul>
+            </Alert>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowModal(false)}>
+            Cancelar
+          </Button>
+          <Button variant="primary" onClick={handleSave} disabled={loading}>
+            {loading ? 'Guardando...' : 'Guardar Horario'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+    </Card>
+  );
+};
+
+export default HorariosProfesional;

@@ -1,0 +1,377 @@
+/* ============================================
+   SISTEMA DE GESTIÓN DE CITAS - VETERINARIA
+   ESTILOS GLOBALES
+   ============================================ */
+
+/* ---------- FONDO GENERAL NEGRO ---------- */
+body, html, #root, .container, .container-fluid, main {
+  background-color: #000000 !important;
+}
+
+/* ---------- TABLAS ---------- */
+.table, .table-bordered, .table-striped {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+}
+
+.table thead th, 
+.table thead td,
+.table th,
+.table td {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #444444 !important;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #2a2a2a !important;
+}
+
+.table-hover tbody tr:hover td {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+/* ---------- TARJETAS ---------- */
+.card, .card-body, .card-header, .card-footer {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #444444 !important;
+}
+
+/* ---------- MODALES ---------- */
+.modal-content, .modal-header, .modal-body, .modal-footer {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #444444 !important;
+}
+
+/* ---------- FORMULARIOS ---------- */
+.form-control, .form-select, input, select, textarea {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid #555555 !important;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: #333333 !important;
+  color: #ffffff !important;
+  border-color: #777777 !important;
+  box-shadow: none !important;
+}
+
+.form-label, label {
+  color: #ffffff !important;
+}
+
+::placeholder {
+  color: #888888 !important;
+}
+
+/* ---------- BOTONES ---------- */
+.btn {
+  color: #ffffff !important;
+}
+
+.btn-primary {
+  background-color: #2c3e50 !important;
+  border-color: #3d5166 !important;
+}
+
+.btn-primary:hover {
+  background-color: #3d5166 !important;
+}
+
+.btn-success {
+  background-color: #1a4a1a !important;
+  border-color: #2a5a2a !important;
+}
+
+.btn-success:hover {
+  background-color: #2a5a2a !important;
+}
+
+.btn-danger {
+  background-color: #4a1a1a !important;
+  border-color: #5a2a2a !important;
+}
+
+.btn-danger:hover {
+  background-color: #5a2a2a !important;
+}
+
+.btn-warning {
+  background-color: #4a4a1a !important;
+  border-color: #5a5a2a !important;
+  color: #000000 !important;
+}
+
+.btn-info {
+  background-color: #1a4a4a !important;
+  border-color: #2a5a5a !important;
+}
+
+.btn-secondary {
+  background-color: #333333 !important;
+  border-color: #444444 !important;
+}
+
+/* Botones Agregar (light/outline-light) */
+.btn-light, 
+.btn-outline-light {
+  background-color: #2c3e50 !important;
+  border-color: #3d5166 !important;
+  color: #ffffff !important;
+}
+
+.btn-light:hover,
+.btn-outline-light:hover {
+  background-color: #3d5166 !important;
+  color: #ffffff !important;
+}
+
+/* ---------- BADGES ---------- */
+.badge {
+  color: #ffffff !important;
+  padding: 5px 10px !important;
+  border-radius: 20px !important;
+}
+
+.badge.bg-warning {
+  background-color: #5a5a1a !important;
+}
+
+.badge.bg-success {
+  background-color: #1a5a1a !important;
+}
+
+.badge.bg-danger {
+  background-color: #5a1a1a !important;
+}
+
+.badge.bg-info {
+  background-color: #1a5a5a !important;
+}
+
+.badge.bg-secondary {
+  background-color: #444444 !important;
+}
+
+/* ---------- TABS ---------- */
+.nav-tabs {
+  border-bottom-color: #444444 !important;
+}
+
+.nav-tabs .nav-link {
+  color: #cccccc !important;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: #1a1a1a !important;
+  color: #ffffff !important;
+  border-color: #444444 #444444 #1a1a1a !important;
+}
+
+/* ---------- DROPDOWNS ---------- */
+.dropdown-menu, .dropdown-item {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+.dropdown-item:hover {
+  background-color: #3a3a3a !important;
+}
+
+/* ---------- TEXTOS GENERALES ---------- */
+h1, h2, h3, h4, h5, h6, p, span, div, small, strong, label {
+  color: #ffffff !important;
+}
+
+.text-muted {
+  color: #aaaaaa !important;
+}
+
+/* ---------- ALERTAS ---------- */
+.alert {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border-color: #444444 !important;
+}
+
+.alert-danger {
+  color: #ffaaaa !important;
+}
+
+.alert-success {
+  color: #aaffaa !important;
+}
+
+/* ---------- NOTA DE HORARIOS ---------- */
+.alert-info, .alert.alert-info {
+  background-color: #1a1a1a !important;
+  border: 1px solid #3d5166 !important;
+  color: #ffffff !important;
+}
+
+.alert-info small, .alert-info .text-muted {
+  color: #cccccc !important;
+}
+
+.bg-light {
+  background-color: #1a1a1a !important;
+}
+
+/* ============================================
+   HISTORIA CLÍNICA - EXCEPCIÓN
+   Fondo blanco, letras negras
+   ============================================ */
+
+/* Contenedor de la historia clínica */
+.historia-container,
+div[ref*="printRef"],
+#historia-content {
+  background-color: white !important;
+  color: #1a1a1a !important;
+}
+
+/* Todas las letras dentro de la historia clínica en negro */
+.historia-container *,
+div[ref*="printRef"] *,
+#historia-content * {
+  background-color: transparent !important;
+  color: #1a1a1a !important;
+}
+
+/* Títulos y negritas en historia clínica */
+.historia-container h1, .historia-container h2, .historia-container h3, .historia-container h4,
+.historia-container strong, .historia-container b,
+div[ref*="printRef"] h1, div[ref*="printRef"] h2, div[ref*="printRef"] h3, div[ref*="printRef"] h4,
+div[ref*="printRef"] strong, div[ref*="printRef"] b {
+  color: #1a1a1a !important;
+}
+
+/* Tablas dentro de historia clínica */
+.historia-container .table,
+div[ref*="printRef"] .table {
+  background-color: white !important;
+}
+
+.historia-container .table td, .historia-container .table th,
+div[ref*="printRef"] .table td, div[ref*="printRef"] .table th {
+  background-color: white !important;
+  color: #1a1a1a !important;
+  border-color: #dddddd !important;
+}
+
+/* Cajas de diagnóstico, tratamiento en historia clínica */
+.historia-container div[style*="background-color: #f5f5f5"],
+div[ref*="printRef"] div[style*="background-color: #f5f5f5"] {
+  background-color: #f5f5f5 !important;
+  color: #1a1a1a !important;
+}
+
+.historia-container div[style*="background-color: #f5f5f5"] *,
+div[ref*="printRef"] div[style*="background-color: #f5f5f5"] * {
+  color: #1a1a1a !important;
+}
+
+/* ============================================
+   IMPRESIÓN
+   ============================================ */
+@media print {
+  /* Ocultar botones de acción */
+  .no-print, .btn, button, .navbar, .sidebar {
+    display: none !important;
+  }
+  
+  /* Todo en blanco y negro */
+  * {
+    background-color: white !important;
+    color: #1a1a1a !important;
+    box-shadow: none !important;
+    border-color: #dddddd !important;
+  }
+  
+  /* Asegurar que la historia clínica se vea bien */
+  .historia-container, div[ref*="printRef"], #historia-content {
+    margin: 0;
+    padding: 0;
+  }
+  
+  @page {
+    size: letter;
+    margin: 1.5cm;
+  }
+}
+
+/* ============================================
+   SCROLLBAR PERSONALIZADA
+   ============================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #444444;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #666666;
+}
+/* ============================================
+   CORREGIR CAJAS DE RESPUESTAS EN HISTORIA CLÍNICA
+   ============================================ */
+
+/* Forzar que las cajas de diagnóstico, tratamiento, medicamentos tengan fondo gris claro y texto negro */
+.historia-container div[style*="padding: 12px"],
+div[ref*="printRef"] div[style*="padding: 12px"],
+#historia-content div[style*="padding: 12px"] {
+  background-color: #f5f5f5 !important;
+  border: 1px solid #dddddd !important;
+  color: #1a1a1a !important;
+}
+
+/* Texto dentro de esas cajas */
+.historia-container div[style*="padding: 12px"] *,
+div[ref*="printRef"] div[style*="padding: 12px"] *,
+#historia-content div[style*="padding: 12px"] * {
+  color: #1a1a1a !important;
+  background-color: transparent !important;
+}
+
+/* Específicamente para diagnóstico, tratamiento, medicamentos, observaciones */
+.historia-container div[style*="min-height"],
+div[ref*="printRef"] div[style*="min-height"],
+#historia-content div[style*="min-height"] {
+  background-color: #f5f5f5 !important;
+  border: 1px solid #dddddd !important;
+  color: #1a1a1a !important;
+}
+
+.historia-container div[style*="min-height"] *,
+div[ref*="printRef"] div[style*="min-height"] *,
+#historia-content div[style*="min-height"] * {
+  color: #1a1a1a !important;
+}
+
+/* Forzar cualquier div con fondo gris */
+div[style*="background-color: #f5f5f5"],
+div[style*="background-color: #f9f9f9"],
+div[style*="background: #f5f5f5"],
+div[style*="background: #f9f9f9"] {
+  background-color: #f5f5f5 !important;
+  color: #1a1a1a !important;
+}
+
+div[style*="background-color: #f5f5f5"] *,
+div[style*="background-color: #f9f9f9"] *,
+div[style*="background: #f5f5f5"] *,
+div[style*="background: #f9f9f9"] * {
+  color: #1a1a1a !important;
+}
