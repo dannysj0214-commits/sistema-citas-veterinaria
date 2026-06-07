@@ -20,19 +20,23 @@ console.log('📁 .env cargado - MONGO_URI:', process.env.MONGO_URI);
 
 // ========== CONFIGURACIÓN CORS CORREGIDA ==========
 const allowedOrigins = [
+  // Desarrollo local
   'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:3000',
   'http://localhost:5000',
+  // Backend Render
   'https://sistema-citas-api.onrender.com',
+  // Frontend Netlify
   'https://sistemaveterinaria.netlify.app',
   'https://sistema-citas-frontend.onrender.com',
   'https://elaborate-lebkuchen-fd6abe.netlify.app',
   'https://sistema-citas-veterinaria.netlify.app',
-  // Dominios de Vercel
+  // Frontend Vercel
   'https://frontend-ck6vcg0c8-dany-s-projects19.vercel.app',
   'https://frontend-514k33pj4-dany-s-projects19.vercel.app',
   'https://frontend-neon-omega-51.vercel.app',
+  'https://frontend-dhoq2zt1v-dany-s-projects19.vercel.app',
   'https://frontend-9ukjdye1v-dany-s-projects19.vercel.app'
 ];
 
