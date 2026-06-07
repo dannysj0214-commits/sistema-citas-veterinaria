@@ -51,43 +51,60 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
     }
 
     try {
-      console.log('📝 Guardando historia clínica...');
-      console.log('🔑 Token:', localStorage.getItem('token')?.substring(0, 30));
+      // Obtener token directamente
+      const token = localStorage.getItem('token');
+      console.log('🔑 Token:', token ? `${token.substring(0, 30)}...` : 'NO HAY TOKEN');
       
-      // Crear historia clínica
-      const response = await api.post('/medical-records', {
-        propietario: cita?.id_cliente?.nombre || '',
-        paciente: formData.paciente,
-        especie: formData.especie,
-        raza: formData.raza,
-        edad: formData.edad,
-        peso: formData.peso,
-        temperatura: formData.temperatura,
-        diagnostico: formData.diagnostico,
-        tratamiento: formData.tratamiento,
-        medicamentos: formData.medicamentos,
-        observaciones: formData.observaciones,
-        cliente_id: cita?.id_cliente?._id,
-        appointment_id: cita?._id
+      // Crear historia clínica con fetch directo para asegurar token
+      const response = await fetch(`${api.defaults.baseURL}/medical-records`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          propietario: cita?.id_cliente?.nombre || '',
+          paciente: formData.paciente,
+          especie: formData.especie,
+          raza: formData.raza,
+          edad: formData.edad,
+          peso: formData.peso,
+          temperatura: formData.temperatura,
+          diagnostico: formData.diagnostico,
+          tratamiento: formData.tratamiento,
+          medicamentos: formData.medicamentos,
+          observaciones: formData.observaciones,
+          cliente_id: cita?.id_cliente?._id,
+          appointment_id: cita?._id
+        })
       });
 
-      console.log('✅ Respuesta:', response.data);
+      const data = await response.json();
+      console.log('📡 Respuesta:', response.status, data);
 
-      if (response.data.success) {
+      if (response.ok && data.success) {
         setSuccess('Historia clínica guardada exitosamente');
         
         // Actualizar estado de la cita a completada
-        await api.put(`/appointments/${cita._id}/estado`, { estado: 'completada' });
+        await fetch(`${api.defaults.baseURL}/appointments/${cita._id}/estado`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ estado: 'completada' })
+        });
         
         setTimeout(() => {
           onCitaAtendida();
           onHide();
         }, 1500);
+      } else {
+        setError(data.message || 'Error al guardar la historia clínica');
       }
     } catch (error) {
       console.error('❌ Error al guardar:', error);
-      console.error('Status:', error.response?.status);
-      setError(error.response?.data?.message || 'Error al guardar la historia clínica');
+      setError('Error al guardar la historia clínica');
     } finally {
       setLoading(false);
     }
