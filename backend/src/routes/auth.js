@@ -8,11 +8,15 @@ const { auth } = require('../middleware/auth');
 // ========== REGISTRO DE USUARIO ==========
 router.post('/register', async (req, res) => {
   try {
-    const { nombre, email, password, telefono, rol } = req.body;
+    const { nombre, email, password, telefono, rol, especialidad } = req.body;
     
     // Validaciones
     if (!nombre || !email || !password || !telefono) {
       return res.status(400).json({ success: false, message: 'Todos los campos son requeridos' });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 6 caracteres' });
     }
     
     // Verificar si el usuario ya existe
@@ -26,14 +30,20 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
     
     // Crear usuario
-    const user = new User({
+    const userData = {
       nombre,
       email,
       password: hashedPassword,
       telefono,
       rol: rol || 'cliente'
-    });
+    };
     
+    // Si es profesional, agregar especialidad
+    if (rol === 'profesional' && especialidad) {
+      userData.especialidad = especialidad;
+    }
+    
+    const user = new User(userData);
     await user.save();
     
     // Crear token
@@ -51,7 +61,8 @@ router.post('/register', async (req, res) => {
         id: user._id,
         nombre: user.nombre,
         email: user.email,
-        rol: user.rol
+        rol: user.rol,
+        especialidad: user.especialidad
       }
     });
   } catch (error) {
@@ -65,24 +76,20 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
     
-    // Validaciones
     if (!email || !password) {
       return res.status(400).json({ success: false, message: 'Email y contraseña son requeridos' });
     }
     
-    // Buscar usuario
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
     
-    // Verificar contraseña
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
     
-    // Crear token
     const token = jwt.sign(
       { id: user._id, email: user.email, rol: user.rol },
       process.env.JWT_SECRET || 'mi_secreto_super_seguro',
@@ -135,13 +142,12 @@ router.get('/profesionales', async (req, res) => {
 router.put('/profile', auth, async (req, res) => {
   try {
     const { nombre, telefono } = req.body;
-    
     const user = await User.findById(req.userId);
+    
     if (nombre) user.nombre = nombre;
     if (telefono) user.telefono = telefono;
     
     await user.save();
-    
     res.json({ success: true, message: 'Perfil actualizado', data: user });
   } catch (error) {
     console.error('Error al actualizar perfil:', error);
