@@ -149,7 +149,7 @@ const Login = () => {
                   <div className="mt-2" style={{ fontSize: '0.7rem', color: '#999999' }}>
                     <p className="mb-1"><strong style={{ color: '#ffffff' }}>ADMIN:</strong> admin@test.com / admin123</p>
                     <p className="mb-1"><strong style={{ color: '#ffffff' }}>PROFESIONAL:</strong> profesional@test.com / 123456</p>
-                    <p><strong style={{ color: '#ffffff' }}>CLIENTE:</strong> cliente@test.com / 123456</p>
+                    <p><strong style={{ color: '#ffffff' }}>CLIENTE:</strong> REGISTRESE COMO CLIENTE  / PONGA SU CONTRAEÑA</p>
                   </div>
                   <Link to="/register" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '0.75rem', marginTop: '15px', display: 'inline-block', borderBottom: '1px solid #333333' }}>
                     ¿NO TIENES CUENTA? REGÍSTRATE
