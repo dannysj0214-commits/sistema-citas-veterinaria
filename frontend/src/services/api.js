@@ -1,16 +1,12 @@
 import axios from 'axios';
 
-// FORZAR LA URL DEL BACKEND EN RENDER (Netlify no está leyendo la variable)
+// FORZAR URL DEL BACKEND EN RENDER
 const API_URL = 'https://sistema-citas-api.onrender.com/api';
 
-// Intentar usar variable de entorno si existe (para desarrollo local)
-const finalAPIUrl = import.meta.env.DEV ? (import.meta.env.VITE_API_URL || 'http://localhost:5000/api') : API_URL;
-
-console.log('🔗 API_URL configurada:', finalAPIUrl);
-console.log('🔧 Modo:', import.meta.env.DEV ? 'Desarrollo Local' : 'Producción');
+console.log('🔗 API_URL configurada:', API_URL);
 
 const api = axios.create({
-  baseURL: finalAPIUrl,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   },
@@ -23,11 +19,10 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log(`🔑 Token agregado a ${config.url}`);
+      console.log(`🔑 Token agregado a: ${config.url}`);
     } else {
-      console.log(`⚠️ Sin token para ${config.url}`);
+      console.log(`⚠️ No hay token para: ${config.url}`);
     }
-    console.log(`📝 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
   },
   (error) => {
@@ -49,8 +44,7 @@ api.interceptors.response.use(
       localStorage.removeItem('user');
       window.location.href = '/login';
     } else if (error.code === 'ERR_NETWORK') {
-      console.error('❌ Error de red - No se puede conectar al backend:', finalAPIUrl);
-      console.error('   Verifica que el backend esté corriendo en Render');
+      console.error('❌ Error de red - No se puede conectar al backend:', API_URL);
     } else {
       console.error(`❌ Error en respuesta: ${error.response?.status} - ${error.response?.data?.message || error.message}`);
     }
