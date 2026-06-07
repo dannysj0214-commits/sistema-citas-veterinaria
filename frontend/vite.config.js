@@ -3,20 +3,10 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  publicDir: 'public',
-  server: {
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true
-      }
-    }
-  },
   build: {
+    minify: 'terser',
     outDir: 'dist',
     sourcemap: false,
-    minify: 'terser',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -24,6 +14,15 @@ export default defineConfig({
           bootstrap: ['bootstrap', 'react-bootstrap'],
           charts: ['chart.js', 'react-chartjs-2']
         }
+      }
+    }
+  },
+  server: {
+    port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true
       }
     }
   }
