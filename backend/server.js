@@ -27,9 +27,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Permitir solicitudes sin origen (como Postman)
     if (!origin) return callback(null, true);
-    
     if (allowedOrigins.indexOf(origin) === -1) {
       console.log(`❌ CORS bloqueado: ${origin}`);
       return callback(new Error('CORS policy error'), false);
@@ -37,20 +35,14 @@ app.use(cors({
     return callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-// Middleware para logging
-app.use((req, res, next) => {
-  console.log(`📝 ${req.method} ${req.url}`);
-  next();
-});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ========== RUTAS DE LA API ==========
+// ========== RUTAS ==========
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/services', serviceRoutes);
@@ -60,16 +52,11 @@ app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
 
-// ========== RUTA DE SALUD ==========
+// ========== RUTAS PÚBLICAS ==========
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    message: 'Servidor funcionando correctamente',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'OK', message: 'Servidor funcionando correctamente', timestamp: new Date().toISOString() });
 });
 
-// ========== RUTA PRINCIPAL ==========
 app.get('/', (req, res) => {
   res.json({
     nombre: 'Sistema de Gestión de Citas para Servicios Profesionales',
@@ -90,82 +77,35 @@ app.get('/', (req, res) => {
   });
 });
 
-// ========== MANEJO DE ERRORES 404 ==========
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    success: false, 
-    message: `Ruta ${req.originalUrl} no encontrada` 
-  });
-});
-
 // ========== CONEXIÓN A MONGODB ==========
 const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGO_URI;
     if (!mongoURI) {
-      console.error('❌ MONGO_URI no está definida en variables de entorno');
+      console.error('❌ MONGO_URI no está definida');
       return;
     }
     await mongoose.connect(mongoURI);
     console.log('✅ Conectado a MongoDB Atlas correctamente');
   } catch (error) {
     console.error('❌ Error de conexión a MongoDB:', error.message);
-    console.log('⚠️ Reintentando conexión en 5 segundos...');
     setTimeout(connectDB, 5000);
   }
 };
 
 connectDB();
 
-// Manejo de eventos de conexión
 mongoose.connection.on('disconnected', () => {
   console.log('⚠️ MongoDB desconectado. Reconectando...');
   connectDB();
 });
 
-mongoose.connection.on('error', (err) => {
-  console.error('❌ Error en MongoDB:', err);
-});
-
 // ========== INICIAR SERVIDOR ==========
-// Render asigna el puerto mediante la variable de entorno PORT
 const PORT = process.env.PORT || 10000;
-
-const server = app.listen(PORT, '0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`\n🚀 ========================================`);
   console.log(`📡 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🌐 URL: http://0.0.0.0:${PORT}`);
-  console.log(`🔗 API Health: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`🌐 URL: https://sistema-citas-api.onrender.com`);
+  console.log(`🔗 API Health: https://sistema-citas-api.onrender.com/api/health`);
   console.log(`========================================\n`);
 });
-
-// ========== MANEJO DE CIERRE GRACEFUL ==========
-process.on('SIGTERM', () => {
-  console.log('SIGTERM recibido, cerrando servidor...');
-  server.close(async () => {
-    console.log('Servidor cerrado');
-    try {
-      await mongoose.connection.close();
-      console.log('Conexión a MongoDB cerrada');
-    } catch (err) {
-      console.error('Error al cerrar MongoDB:', err);
-    }
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  console.log('SIGINT recibido, cerrando servidor...');
-  server.close(async () => {
-    console.log('Servidor cerrado');
-    try {
-      await mongoose.connection.close();
-      console.log('Conexión a MongoDB cerrada');
-    } catch (err) {
-      console.error('Error al cerrar MongoDB:', err);
-    }
-    process.exit(0);
-  });
-});
-
-module.exports = app;
