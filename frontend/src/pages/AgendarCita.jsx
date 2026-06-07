@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
 import { FaLightbulb, FaDollarSign, FaClock, FaCheckCircle } from 'react-icons/fa';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
-const API_URL = 'http://localhost:5000/api';
+import api from '../services/api';
 
 // Servicios sugeridos predefinidos para mostrar al cliente
 const SERVICIOS_SUGERIDOS_CLIENTE = [
@@ -34,8 +32,6 @@ const AgendarCita = () => {
     notas: ''
   });
 
-  const token = localStorage.getItem('token');
-
   useEffect(() => {
     cargarProfesionales();
   }, []);
@@ -54,7 +50,7 @@ const AgendarCita = () => {
 
   const cargarProfesionales = async () => {
     try {
-      const response = await axios.get(`${API_URL}/auth/profesionales`);
+      const response = await api.get('/auth/profesionales');
       setProfesionales(response.data.data || []);
     } catch (error) {
       console.error('Error cargando profesionales:', error);
@@ -64,10 +60,9 @@ const AgendarCita = () => {
 
   const cargarServicios = async (profesionalId) => {
     try {
-      const response = await axios.get(`${API_URL}/services/profesional/${profesionalId}`);
+      const response = await api.get(`/services/profesional/${profesionalId}`);
       const serviciosData = response.data.data || [];
       setServicios(serviciosData);
-      // Si hay servicios del profesional, ocultar sugeridos
       setMostrarSugeridos(serviciosData.length === 0);
     } catch (error) {
       console.error('Error cargando servicios:', error);
@@ -79,10 +74,7 @@ const AgendarCita = () => {
   const cargarHorarios = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(
-        `${API_URL}/appointments/disponibles/${formData.profesionalId}?fecha=${formData.fecha}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.get(`/appointments/disponibles/${formData.profesionalId}?fecha=${formData.fecha}`);
       setHorarios(response.data.data || []);
     } catch (error) {
       console.error('Error cargando horarios:', error);
@@ -108,7 +100,6 @@ const AgendarCita = () => {
 
   const seleccionarServicioSugerido = (servicio) => {
     setFormData(prev => ({ ...prev, servicio: servicio.nombre }));
-    // Agregar el motivo automáticamente
     setFormData(prev => ({ 
       ...prev, 
       motivo: `Solicito ${servicio.nombre}. ${servicio.descripcion}` 
@@ -128,18 +119,14 @@ const AgendarCita = () => {
     }
 
     try {
-      const response = await axios.post(
-        `${API_URL}/appointments`,
-        {
-          id_profesional: formData.profesionalId,
-          fecha: formData.fecha,
-          hora: formData.hora,
-          servicio: formData.servicio,
-          motivo: formData.motivo,
-          notas: formData.notas
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.post('/appointments', {
+        id_profesional: formData.profesionalId,
+        fecha: formData.fecha,
+        hora: formData.hora,
+        servicio: formData.servicio,
+        motivo: formData.motivo,
+        notas: formData.notas
+      });
 
       if (response.data.success) {
         setSuccess('Cita agendada exitosamente');
@@ -161,23 +148,24 @@ const AgendarCita = () => {
 
   return (
     <Container fluid>
-      <h2 className="mb-4">Agendar Nueva Cita</h2>
+      <h2 className="mb-4" style={{ color: '#ffffff' }}>Agendar Nueva Cita</h2>
       
       <Row>
         <Col lg={8}>
-          <Card className="shadow-sm">
+          <Card style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '15px' }}>
             <Card.Body>
               {error && <Alert variant="danger">{error}</Alert>}
               {success && <Alert variant="success">{success}</Alert>}
               
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Seleccionar Profesional *</Form.Label>
+                  <Form.Label style={{ color: '#ffffff' }}>Seleccionar Profesional *</Form.Label>
                   <Form.Select
                     name="profesionalId"
                     value={formData.profesionalId}
                     onChange={handleChange}
                     required
+                    style={{ backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
                   >
                     <option value="">Seleccione un profesional...</option>
                     {profesionales.map(prof => (
@@ -189,7 +177,7 @@ const AgendarCita = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Fecha *</Form.Label>
+                  <Form.Label style={{ color: '#ffffff' }}>Fecha *</Form.Label>
                   <Form.Control
                     type="date"
                     name="fecha"
@@ -197,17 +185,19 @@ const AgendarCita = () => {
                     onChange={handleChange}
                     min={minDate}
                     required
+                    style={{ backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
                   />
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Horario *</Form.Label>
+                  <Form.Label style={{ color: '#ffffff' }}>Horario *</Form.Label>
                   <Form.Select
                     name="hora"
                     value={formData.hora}
                     onChange={handleChange}
                     disabled={!formData.fecha || loading}
                     required
+                    style={{ backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
                   >
                     <option value="">Seleccione un horario...</option>
                     {horarios.map(hora => (
@@ -221,13 +211,14 @@ const AgendarCita = () => {
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Servicio *</Form.Label>
+                  <Form.Label style={{ color: '#ffffff' }}>Servicio *</Form.Label>
                   {servicios.length > 0 ? (
                     <Form.Select
                       name="servicio"
                       value={formData.servicio}
                       onChange={handleChange}
                       required
+                      style={{ backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
                     >
                       <option value="">Seleccione un servicio...</option>
                       {servicios.map(serv => (
@@ -244,12 +235,13 @@ const AgendarCita = () => {
                       onChange={handleChange}
                       placeholder="Escriba el servicio que necesita..."
                       required
+                      style={{ backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
                     />
                   )}
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Motivo de la consulta *</Form.Label>
+                  <Form.Label style={{ color: '#ffffff' }}>Motivo de la consulta *</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={3}
@@ -258,11 +250,12 @@ const AgendarCita = () => {
                     onChange={handleChange}
                     placeholder="Describa el motivo de su consulta..."
                     required
+                    style={{ backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
                   />
                 </Form.Group>
 
                 <Form.Group className="mb-3">
-                  <Form.Label>Notas adicionales (opcional)</Form.Label>
+                  <Form.Label style={{ color: '#ffffff' }}>Notas adicionales (opcional)</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={2}
@@ -270,6 +263,7 @@ const AgendarCita = () => {
                     value={formData.notas}
                     onChange={handleChange}
                     placeholder="Información adicional que desee agregar..."
+                    style={{ backgroundColor: '#2a2a2a', borderColor: '#444', color: '#fff' }}
                   />
                 </Form.Group>
 
@@ -277,7 +271,7 @@ const AgendarCita = () => {
                   <Button variant="secondary" onClick={() => navigate('/cliente-dashboard')}>
                     Cancelar
                   </Button>
-                  <Button type="submit" variant="primary" disabled={loading}>
+                  <Button type="submit" variant="primary" disabled={loading} style={{ backgroundColor: '#d4a017', border: 'none' }}>
                     {loading ? <Spinner size="sm" /> : 'Agendar Cita'}
                   </Button>
                 </div>
@@ -288,8 +282,8 @@ const AgendarCita = () => {
         
         <Col lg={4}>
           {/* Servicios Sugeridos para el Cliente */}
-          <Card className="shadow-sm mb-4">
-            <Card.Header className="bg-warning text-dark">
+          <Card style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '15px' }} className="mb-4">
+            <Card.Header style={{ backgroundColor: '#2a2a2a', color: '#d4a017', borderBottom: '1px solid #444' }}>
               <h5 className="mb-0">
                 <FaLightbulb className="me-2" />
                 Servicios Sugeridos
@@ -306,6 +300,7 @@ const AgendarCita = () => {
                     variant="outline-primary"
                     className="text-start"
                     onClick={() => seleccionarServicioSugerido(servicio)}
+                    style={{ borderColor: '#d4a017', color: '#fff' }}
                   >
                     <div className="d-flex justify-content-between align-items-center w-100">
                       <div>
@@ -328,12 +323,14 @@ const AgendarCita = () => {
             </Card.Body>
           </Card>
 
-          <Card className="shadow-sm">
-            <Card.Header as="h5">Información</Card.Header>
+          <Card style={{ backgroundColor: '#1a1a1a', border: '1px solid #333', borderRadius: '15px' }}>
+            <Card.Header style={{ backgroundColor: '#2a2a2a', color: '#d4a017', borderBottom: '1px solid #444' }}>
+              <h5 className="mb-0">Información</h5>
+            </Card.Header>
             <Card.Body>
               <ul className="list-unstyled">
                 <li className="mb-3">
-                  <strong>📋 ¿Cómo funciona?</strong>
+                  <strong style={{ color: '#d4a017' }}>📋 ¿Cómo funciona?</strong>
                   <p className="text-muted small mt-1">
                     1. Seleccione un profesional<br />
                     2. Elija una fecha disponible<br />
@@ -342,14 +339,14 @@ const AgendarCita = () => {
                   </p>
                 </li>
                 <li className="mb-3">
-                  <strong>⏰ Horarios de atención</strong>
+                  <strong style={{ color: '#d4a017' }}>⏰ Horarios de atención</strong>
                   <p className="text-muted small mt-1">
                     Las citas tienen una duración de 90 minutos.<br />
                     Los horarios se actualizan en tiempo real.
                   </p>
                 </li>
                 <li>
-                  <strong>📱 Notificaciones</strong>
+                  <strong style={{ color: '#d4a017' }}>📱 Notificaciones</strong>
                   <p className="text-muted small mt-1">
                     Recibirá notificaciones cuando su cita sea confirmada.
                   </p>
