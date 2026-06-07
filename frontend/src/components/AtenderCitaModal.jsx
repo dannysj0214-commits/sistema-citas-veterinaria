@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Modal, Button, Form, Row, Col, Alert } from 'react-bootstrap';
 import { FaSave, FaFilePdf, FaPaw, FaStethoscope } from 'react-icons/fa';
-import api from '../services/api';  // <-- USAR api, NO axios
+import api from '../services/api';
 
 const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
   const [loading, setLoading] = useState(false);
@@ -52,8 +52,9 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
 
     try {
       console.log('📝 Guardando historia clínica...');
+      console.log('🔑 Token:', localStorage.getItem('token')?.substring(0, 30));
       
-      // Crear historia clínica - usando api
+      // Crear historia clínica
       const response = await api.post('/medical-records', {
         propietario: cita?.id_cliente?.nombre || '',
         paciente: formData.paciente,
@@ -75,7 +76,7 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
       if (response.data.success) {
         setSuccess('Historia clínica guardada exitosamente');
         
-        // Actualizar estado de la cita a completada - usando api
+        // Actualizar estado de la cita a completada
         await api.put(`/appointments/${cita._id}/estado`, { estado: 'completada' });
         
         setTimeout(() => {
@@ -86,7 +87,6 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
     } catch (error) {
       console.error('❌ Error al guardar:', error);
       console.error('Status:', error.response?.status);
-      console.error('URL:', error.config?.url);
       setError(error.response?.data?.message || 'Error al guardar la historia clínica');
     } finally {
       setLoading(false);
@@ -108,7 +108,7 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
 
           {/* Información de la cita */}
           <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-            <h6 style={{ color: '#d4a017' }} className="mb-3">Información de la Cita</h6>
+            <h6 style={{ color: '#d4a017' }}>Información de la Cita</h6>
             <Row>
               <Col md={6}>
                 <small className="text-muted">Fecha:</small>
@@ -129,9 +129,7 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
             </Row>
           </div>
 
-          <h6 style={{ color: '#d4a017' }} className="mb-3">
-            <FaPaw className="me-2" /> Datos del Paciente
-          </h6>
+          <h6 style={{ color: '#d4a017' }}><FaPaw className="me-2" /> Datos del Paciente</h6>
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group>
@@ -224,9 +222,7 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
             </Col>
           </Row>
 
-          <h6 style={{ color: '#d4a017' }} className="mb-3 mt-3">
-            <FaStethoscope className="me-2" /> Datos Clínicos
-          </h6>
+          <h6 style={{ color: '#d4a017' }} className="mt-3"><FaStethoscope className="me-2" /> Datos Clínicos</h6>
           
           <Form.Group className="mb-3">
             <Form.Label style={{ color: '#fff' }}>Diagnóstico *</Form.Label>
