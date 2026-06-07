@@ -23,6 +23,9 @@ api.interceptors.request.use(
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log(`🔑 Token agregado a ${config.url}`);
+    } else {
+      console.log(`⚠️ Sin token para ${config.url}`);
     }
     console.log(`📝 ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
     return config;
@@ -36,17 +39,21 @@ api.interceptors.request.use(
 // Interceptor para manejar errores de respuesta
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ Respuesta exitosa: ${response.status}`);
+    console.log(`✅ Respuesta exitosa: ${response.status} - ${response.config.url}`);
     return response;
   },
   (error) => {
     if (error.response?.status === 401) {
-      console.log('🔐 Sesión expirada, redirigiendo a login...');
+      console.log('🔐 Sesión expirada (401), redirigiendo a login...');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';
+    } else if (error.code === 'ERR_NETWORK') {
+      console.error('❌ Error de red - No se puede conectar al backend:', finalAPIUrl);
+      console.error('   Verifica que el backend esté corriendo en Render');
+    } else {
+      console.error(`❌ Error en respuesta: ${error.response?.status} - ${error.response?.data?.message || error.message}`);
     }
-    console.error('❌ Error en respuesta:', error.response?.status, error.response?.data);
     return Promise.reject(error);
   }
 );
