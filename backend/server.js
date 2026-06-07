@@ -1,68 +1,85 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const dotenv = require('dotenv');
+require('dotenv').config();
 
-// Cargar variables de entorno
-dotenv.config();
-
-// Crear aplicación Express primero
-const app = express();
-
-// Middlewares
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Puerto
-const PORT = process.env.PORT || 5000;
-
-// Importar rutas (DESPUÉS de crear app)
+// Importar rutas
 const authRoutes = require('./src/routes/auth');
 const appointmentRoutes = require('./src/routes/appointments');
 const serviceRoutes = require('./src/routes/services');
 const availabilityRoutes = require('./src/routes/availability');
 const notificationRoutes = require('./src/routes/notifications');
+const medicalRecordRoutes = require('./src/routes/medicalRecords');
 const reportRoutes = require('./src/routes/reports');
 const adminRoutes = require('./src/routes/admin');
-const medicalRecordsRoutes = require('./src/routes/medicalRecords');
 
-// Conexión a MongoDB
-const connectDB = async () => {
-  try {
-    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/sistema_citas';
-    await mongoose.connect(mongoURI);
-    console.log('✅ MongoDB conectado correctamente');
-  } catch (error) {
-    console.error('❌ Error conectando a MongoDB:', error.message);
-    process.exit(1);
-  }
-};
+const app = express();
 
-// Rutas (DESPUÉS de conectar)
+// ========== CONFIGURACIÓN CORS COMPLETA ==========
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'https://sistema-citas-api.onrender.com',
+  'https://sistemaveterinaria.netlify.app',
+  'https://sistema-citas-frontend.onrender.com',
+  'https://sistema-citas-veterinaria.vercel.app'
+];
+
+app.use(cors({
+  origin: function(origin, callback) {
+    // Permitir solicitudes sin origen (como Postman o apps móviles)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `CORS policy error - Origin ${origin} no permitido`;
+      console.log(msg);
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With']
+}));
+
+// Middleware para logging de peticiones
+app.use((req, res, next) => {
+  console.log(`📝 ${req.method} ${req.url}`);
+  next();
+});
+
+// Middleware para parsear JSON
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// ========== RUTAS DE LA API ==========
 app.use('/api/auth', authRoutes);
 app.use('/api/appointments', appointmentRoutes);
 app.use('/api/services', serviceRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/medical-records', medicalRecordRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/medical-records', medicalRecordsRoutes);
 
-// Ruta de prueba
+// ========== RUTA DE SALUD ==========
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Servidor funcionando correctamente',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    cors: allowedOrigins
   });
 });
 
-// Ruta raíz
+// ========== RUTA PRINCIPAL ==========
 app.get('/', (req, res) => {
   res.json({
     nombre: 'Sistema de Gestión de Citas para Servicios Profesionales',
     version: '2.0.0',
+    status: 'online',
     endpoints: {
       health: 'GET /api/health',
       auth: 'POST /api/auth/login, POST /api/auth/register, GET /api/auth/profile',
@@ -78,32 +95,60 @@ app.get('/', (req, res) => {
   });
 });
 
-// Manejo de errores 404
-app.use((req, res) => {
-  res.status(404).json({ error: 'Ruta no encontrada' });
-});
-
-// Manejo de errores global
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Error interno del servidor' });
-});
-
-// Iniciar servidor
-const startServer = async () => {
-  await connectDB();
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-    console.log(`📋 API Health: http://localhost:${PORT}/api/health`);
-    console.log(`🔐 Auth: http://localhost:${PORT}/api/auth`);
-    console.log(`📅 Citas: http://localhost:${PORT}/api/appointments`);
-    console.log(`💼 Servicios: http://localhost:${PORT}/api/services`);
-    console.log(`⏰ Horarios: http://localhost:${PORT}/api/availability`);
-    console.log(`🔔 Notificaciones: http://localhost:${PORT}/api/notifications`);
-    console.log(`📊 Reportes: http://localhost:${PORT}/api/reports/stats`);
-    console.log(`👑 Admin: http://localhost:${PORT}/api/admin/usuarios`);
-    console.log(`📋 Medical Records: http://localhost:${PORT}/api/medical-records`);
+// ========== MANEJO DE ERRORES 404 ==========
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    message: `Ruta ${req.originalUrl} no encontrada` 
   });
+});
+
+// ========== CONEXIÓN A MONGODB ==========
+const connectDB = async () => {
+  try {
+    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/sistema_citas';
+    await mongoose.connect(mongoURI);
+    console.log('✅ Conectado a MongoDB Atlas correctamente');
+  } catch (error) {
+    console.error('❌ Error de conexión a MongoDB:', error.message);
+    // No salir del proceso, solo mostrar error
+    console.log('⚠️ Reintentando conexión en 5 segundos...');
+    setTimeout(connectDB, 5000);
+  }
 };
 
-startServer();
+connectDB();
+
+// Manejo de eventos de conexión
+mongoose.connection.on('disconnected', () => {
+  console.log('⚠️ MongoDB desconectado. Reconectando...');
+  connectDB();
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('❌ Error en MongoDB:', err);
+});
+
+// ========== INICIAR SERVIDOR ==========
+const PORT = process.env.PORT || 5000;
+const server = app.listen(PORT, () => {
+  console.log(`\n🚀 ========================================`);
+  console.log(`📡 Servidor corriendo en puerto ${PORT}`);
+  console.log(`🌐 URL: http://localhost:${PORT}`);
+  console.log(`🔗 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`========================================\n`);
+});
+
+// Manejo de cierre graceful
+process.on('SIGTERM', () => {
+  console.log('SIGTERM recibido, cerrando servidor...');
+  server.close(() => {
+    console.log('Servidor cerrado');
+    mongoose.connection.close(false, () => {
+      console.log('Conexión a MongoDB cerrada');
+      process.exit(0);
+    });
+  });
+});
+
+module.exports = app;
