@@ -130,12 +130,12 @@ mongoose.connection.on('error', (err) => {
 });
 
 // ========== INICIAR SERVIDOR ==========
-const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
+const PORT = process.env.PORT || 5000; // Render asigna PORT
+const server = app.listen(PORT, '0.0.0.0', () => {  // <-- IMPORTANTE: 0.0.0.0
   console.log(`\n🚀 ========================================`);
   console.log(`📡 Servidor corriendo en puerto ${PORT}`);
-  console.log(`🌐 URL: http://localhost:${PORT}`);
-  console.log(`🔗 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`🌐 URL: http://0.0.0.0:${PORT}`);
+  console.log(`🔗 API Health: http://0.0.0.0:${PORT}/api/health`);
   console.log(`========================================\n`);
 });
 
