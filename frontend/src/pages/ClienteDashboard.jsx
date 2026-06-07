@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Badge, Spinner, Alert, Button } from 'react-bootstrap';
 import { Calendar, ClipboardCheck, Clock, Bell, FileMedical } from 'react-bootstrap-icons';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-
-const API_URL = 'http://localhost:5000/api';
+import api from '../services/api';
 
 const ClienteDashboard = () => {
   const [citas, setCitas] = useState([]);
@@ -12,8 +10,6 @@ const ClienteDashboard = () => {
   const [notificaciones, setNotificaciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [detalleError, setDetalleError] = useState('');
-  const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const navigate = useNavigate();
 
@@ -25,60 +21,25 @@ const ClienteDashboard = () => {
     try {
       setLoading(true);
       setError('');
-      setDetalleError('');
-      
-      // Verificar token
-      if (!token) {
-        setError('No hay sesión activa. Por favor inicie sesión nuevamente.');
-        setLoading(false);
-        return;
-      }
       
       console.log('🔵 Cargando datos del cliente...');
-      console.log('📝 Token:', token.substring(0, 20) + '...');
       
-      // 1. Cargar citas del cliente
-      try {
-        console.log('📋 Cargando citas...');
-        const citasRes = await axios.get(`${API_URL}/appointments/cliente`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        console.log('✅ Citas cargadas:', citasRes.data);
-        setCitas(citasRes.data.data || []);
-      } catch (error) {
-        console.error('❌ Error al cargar citas:', error.response?.status, error.response?.data);
-        setDetalleError(prev => prev + `Citas: ${error.response?.data?.message || error.message}\n`);
-      }
+      // Cargar citas del cliente
+      const citasRes = await api.get('/appointments/cliente');
+      console.log('📋 Citas cargadas:', citasRes.data);
+      setCitas(citasRes.data.data || []);
       
-      // 2. Cargar historias clínicas
-      try {
-        console.log('📋 Cargando historias...');
-        const historiasRes = await axios.get(`${API_URL}/medical-records/cliente`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        console.log('✅ Historias cargadas:', historiasRes.data);
-        setHistorias(historiasRes.data.data || []);
-      } catch (error) {
-        console.error('❌ Error al cargar historias:', error.response?.status, error.response?.data);
-        setDetalleError(prev => prev + `Historias: ${error.response?.data?.message || error.message}\n`);
-      }
+      // Cargar historias clínicas
+      const historiasRes = await api.get('/medical-records/cliente');
+      setHistorias(historiasRes.data.data || []);
       
-      // 3. Cargar notificaciones
-      try {
-        console.log('📋 Cargando notificaciones...');
-        const notifRes = await axios.get(`${API_URL}/notifications`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const noLeidas = (notifRes.data.data || []).filter(n => !n.leido);
-        setNotificaciones(noLeidas);
-        console.log('✅ Notificaciones cargadas:', noLeidas.length);
-      } catch (error) {
-        console.error('❌ Error al cargar notificaciones:', error.response?.status, error.response?.data);
-        setDetalleError(prev => prev + `Notificaciones: ${error.response?.data?.message || error.message}\n`);
-      }
+      // Cargar notificaciones
+      const notifRes = await api.get('/notifications');
+      const noLeidas = (notifRes.data.data || []).filter(n => !n.leido);
+      setNotificaciones(noLeidas);
       
     } catch (error) {
-      console.error('❌ Error general:', error);
+      console.error('❌ Error al cargar datos:', error);
       setError('Error al cargar los datos del dashboard');
     } finally {
       setLoading(false);
@@ -101,24 +62,8 @@ const ClienteDashboard = () => {
   if (error) {
     return (
       <Container className="mt-4">
-        <Alert variant="danger">
-          <Alert.Heading>Error</Alert.Heading>
-          <p>{error}</p>
-          {detalleError && (
-            <details className="mt-2">
-              <summary>Ver detalles técnicos</summary>
-              <pre className="mt-2 small">{detalleError}</pre>
-            </details>
-          )}
-          <div className="mt-3">
-            <Button variant="danger" onClick={cargarDatos} className="me-2">
-              Reintentar
-            </Button>
-            <Button variant="secondary" onClick={() => navigate('/login')}>
-              Volver a iniciar sesión
-            </Button>
-          </div>
-        </Alert>
+        <Alert variant="danger">{error}</Alert>
+        <Button variant="primary" onClick={cargarDatos}>Reintentar</Button>
       </Container>
     );
   }
@@ -129,7 +74,7 @@ const ClienteDashboard = () => {
       
       <Row className="mb-4">
         <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm">
+          <Card className="text-center shadow-sm border-warning">
             <Card.Body>
               <Clock size={40} className="text-warning mb-2" />
               <h3>{citasPendientes}</h3>
@@ -138,7 +83,7 @@ const ClienteDashboard = () => {
           </Card>
         </Col>
         <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm">
+          <Card className="text-center shadow-sm border-info">
             <Card.Body>
               <Calendar size={40} className="text-info mb-2" />
               <h3>{citasConfirmadas}</h3>
@@ -147,7 +92,7 @@ const ClienteDashboard = () => {
           </Card>
         </Col>
         <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm">
+          <Card className="text-center shadow-sm border-success">
             <Card.Body>
               <ClipboardCheck size={40} className="text-success mb-2" />
               <h3>{citasCompletadas}</h3>
@@ -156,11 +101,11 @@ const ClienteDashboard = () => {
           </Card>
         </Col>
         <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm">
+          <Card className="text-center shadow-sm border-danger">
             <Card.Body>
               <Bell size={40} className="text-danger mb-2" />
               <h3>{notificaciones.length}</h3>
-              <Card.Text>Notificaciones</Card.Text>
+              <Card.Text>Notificaciones Nuevas</Card.Text>
             </Card.Body>
           </Card>
         </Col>
@@ -220,7 +165,7 @@ const ClienteDashboard = () => {
                   <Calendar className="me-2" /> Agendar Cita
                 </Link>
                 <Link to="/mis-citas" className="btn btn-outline-secondary">
-                  Mis Citas
+                  Ver Mis Citas
                 </Link>
               </div>
             </Card.Body>
@@ -230,7 +175,7 @@ const ClienteDashboard = () => {
             <Card className="shadow-sm mt-3">
               <Card.Header as="h5">
                 <FileMedical className="me-2" />
-                Últimas Historias
+                Últimas Historias Clínicas
               </Card.Header>
               <Card.Body>
                 {historias.slice(0, 3).map(historia => (

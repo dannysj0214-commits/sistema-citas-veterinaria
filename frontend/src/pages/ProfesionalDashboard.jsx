@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Badge, Spinner, Alert, Tabs, Tab, Table, Button } from 'react-bootstrap';
 import { FaCalendarCheck, FaClock, FaCheckCircle, FaTimesCircle, FaFileMedical, FaEye, FaCalendarAlt, FaUserMd } from 'react-icons/fa';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 import HorariosProfesional from '../components/HorariosProfesional';
 import ServiciosProfesional from '../components/ServiciosProfesional';
-
-const API_URL = 'http://localhost:5000/api';
 
 const ProfesionalDashboard = () => {
   const [citas, setCitas] = useState([]);
   const [historias, setHistorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const navigate = useNavigate();
 
@@ -24,17 +21,15 @@ const ProfesionalDashboard = () => {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      const citasRes = await axios.get(`${API_URL}/appointments/profesional`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      
+      const citasRes = await api.get('/appointments/profesional');
       setCitas(citasRes.data.data || []);
       
-      const historiasRes = await axios.get(`${API_URL}/medical-records/profesional/todas`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const historiasRes = await api.get('/medical-records/profesional/todas');
       setHistorias(historiasRes.data.data || []);
+      
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error cargando datos:', error);
       setError('Error al cargar los datos');
     } finally {
       setLoading(false);
@@ -88,7 +83,10 @@ const ProfesionalDashboard = () => {
                     <tbody>
                       {citas.filter(c => c.estado === 'pendiente' || c.estado === 'confirmada').map(cita => (
                         <tr key={cita._id}>
-                          <td>{cita.fecha}</td><td>{cita.hora}</td><td>{cita.id_cliente?.nombre}</td><td>{cita.servicio}</td>
+                          <td>{cita.fecha}</td>
+                          <td>{cita.hora}</td>
+                          <td>{cita.id_cliente?.nombre}</td>
+                          <td>{cita.servicio}</td>
                           <td><Badge bg={cita.estado === 'pendiente' ? 'warning' : 'info'}>{cita.estado}</Badge></td>
                           <td><Button variant="primary" size="sm" onClick={() => navigate('/mis-citas')}>Atender</Button></td>
                         </tr>
@@ -129,8 +127,8 @@ const ProfesionalDashboard = () => {
           </Card>
         </Tab>
         
-        <Tab eventKey="horarios" title="Horarios"><div className="mt-3"><HorariosProfesional profesionalId={user.id} token={token} /></div></Tab>
-        <Tab eventKey="servicios" title="Servicios"><div className="mt-3"><ServiciosProfesional profesionalId={user.id} token={token} /></div></Tab>
+        <Tab eventKey="horarios" title="Horarios"><div className="mt-3"><HorariosProfesional profesionalId={user.id} token={localStorage.getItem('token')} /></div></Tab>
+        <Tab eventKey="servicios" title="Servicios"><div className="mt-3"><ServiciosProfesional profesionalId={user.id} token={localStorage.getItem('token')} /></div></Tab>
       </Tabs>
     </Container>
   );
