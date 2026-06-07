@@ -51,60 +51,37 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
     }
 
     try {
-      // Obtener token directamente
-      const token = localStorage.getItem('token');
-      console.log('🔑 Token:', token ? `${token.substring(0, 30)}...` : 'NO HAY TOKEN');
-      
-      // Crear historia clínica con fetch directo para asegurar token
-      const response = await fetch(`${api.defaults.baseURL}/medical-records`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          propietario: cita?.id_cliente?.nombre || '',
-          paciente: formData.paciente,
-          especie: formData.especie,
-          raza: formData.raza,
-          edad: formData.edad,
-          peso: formData.peso,
-          temperatura: formData.temperatura,
-          diagnostico: formData.diagnostico,
-          tratamiento: formData.tratamiento,
-          medicamentos: formData.medicamentos,
-          observaciones: formData.observaciones,
-          cliente_id: cita?.id_cliente?._id,
-          appointment_id: cita?._id
-        })
+      // Usar api en lugar de axios directamente
+      const response = await api.post('/medical-records', {
+        propietario: cita?.id_cliente?.nombre || '',
+        paciente: formData.paciente,
+        especie: formData.especie,
+        raza: formData.raza,
+        edad: formData.edad,
+        peso: formData.peso,
+        temperatura: formData.temperatura,
+        diagnostico: formData.diagnostico,
+        tratamiento: formData.tratamiento,
+        medicamentos: formData.medicamentos,
+        observaciones: formData.observaciones,
+        cliente_id: cita?.id_cliente?._id,
+        appointment_id: cita?._id
       });
 
-      const data = await response.json();
-      console.log('📡 Respuesta:', response.status, data);
-
-      if (response.ok && data.success) {
+      if (response.data.success) {
         setSuccess('Historia clínica guardada exitosamente');
         
         // Actualizar estado de la cita a completada
-        await fetch(`${api.defaults.baseURL}/appointments/${cita._id}/estado`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ estado: 'completada' })
-        });
+        await api.put(`/appointments/${cita._id}/estado`, { estado: 'completada' });
         
         setTimeout(() => {
           onCitaAtendida();
           onHide();
         }, 1500);
-      } else {
-        setError(data.message || 'Error al guardar la historia clínica');
       }
     } catch (error) {
-      console.error('❌ Error al guardar:', error);
-      setError('Error al guardar la historia clínica');
+      console.error('Error al guardar:', error);
+      setError(error.response?.data?.message || 'Error al guardar la historia clínica');
     } finally {
       setLoading(false);
     }
@@ -112,45 +89,47 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
 
   return (
     <Modal show={show} onHide={onHide} size="lg" backdrop="static">
-      <Modal.Header closeButton style={{ backgroundColor: '#1a1a1a', color: '#d4a017', borderBottom: '1px solid #333' }}>
-        <Modal.Title style={{ color: '#d4a017' }}>
+      <Modal.Header closeButton>
+        <Modal.Title>
           <FaFilePdf className="me-2" />
           Atención de Cita - Historia Clínica
         </Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
-        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto', backgroundColor: '#111111' }}>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {error && <Alert variant="danger">{error}</Alert>}
           {success && <Alert variant="success">{success}</Alert>}
 
           {/* Información de la cita */}
-          <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-            <h6 style={{ color: '#d4a017' }}>Información de la Cita</h6>
+          <div className="bg-light p-3 rounded mb-4">
+            <h6 className="mb-3">Información de la Cita</h6>
             <Row>
               <Col md={6}>
                 <small className="text-muted">Fecha:</small>
-                <p className="mb-2" style={{ color: '#fff' }}><strong>{cita?.fecha}</strong> - {cita?.hora}</p>
+                <p className="mb-2"><strong>{cita?.fecha}</strong> - {cita?.hora}</p>
               </Col>
               <Col md={6}>
                 <small className="text-muted">Cliente:</small>
-                <p className="mb-2" style={{ color: '#fff' }}><strong>{cita?.id_cliente?.nombre}</strong></p>
+                <p className="mb-2"><strong>{cita?.id_cliente?.nombre}</strong></p>
               </Col>
               <Col md={6}>
                 <small className="text-muted">Servicio:</small>
-                <p className="mb-2" style={{ color: '#fff' }}><strong>{cita?.servicio}</strong></p>
+                <p className="mb-2"><strong>{cita?.servicio}</strong></p>
               </Col>
               <Col md={6}>
                 <small className="text-muted">Motivo:</small>
-                <p className="mb-2" style={{ color: '#fff' }}><strong>{cita?.motivo}</strong></p>
+                <p className="mb-2"><strong>{cita?.motivo}</strong></p>
               </Col>
             </Row>
           </div>
 
-          <h6 style={{ color: '#d4a017' }}><FaPaw className="me-2" /> Datos del Paciente</h6>
+          <h6 className="mb-3 text-primary">
+            <FaPaw className="me-2" /> Datos del Paciente
+          </h6>
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group>
-                <Form.Label style={{ color: '#fff' }}>Nombre del Paciente *</Form.Label>
+                <Form.Label>Nombre del Paciente *</Form.Label>
                 <Form.Control
                   type="text"
                   name="paciente"
@@ -158,19 +137,13 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
                   onChange={handleChange}
                   placeholder="Ej: Max, Luna, Rocky"
                   required
-                  style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
                 />
               </Form.Group>
             </Col>
             <Col md={3}>
               <Form.Group>
-                <Form.Label style={{ color: '#fff' }}>Especie</Form.Label>
-                <Form.Select 
-                  name="especie" 
-                  value={formData.especie} 
-                  onChange={handleChange}
-                  style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
-                >
+                <Form.Label>Especie</Form.Label>
+                <Form.Select name="especie" value={formData.especie} onChange={handleChange}>
                   <option value="Canino">Canino (Perro)</option>
                   <option value="Felino">Felino (Gato)</option>
                   <option value="Ave">Ave</option>
@@ -182,14 +155,13 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
             </Col>
             <Col md={3}>
               <Form.Group>
-                <Form.Label style={{ color: '#fff' }}>Raza</Form.Label>
+                <Form.Label>Raza</Form.Label>
                 <Form.Control
                   type="text"
                   name="raza"
                   value={formData.raza}
                   onChange={handleChange}
                   placeholder="Ej: Labrador, Persa"
-                  style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
                 />
               </Form.Group>
             </Col>
@@ -198,20 +170,19 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
           <Row className="mb-3">
             <Col md={4}>
               <Form.Group>
-                <Form.Label style={{ color: '#fff' }}>Edad</Form.Label>
+                <Form.Label>Edad</Form.Label>
                 <Form.Control
                   type="text"
                   name="edad"
                   value={formData.edad}
                   onChange={handleChange}
                   placeholder="Ej: 2 años, 6 meses"
-                  style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
                 />
               </Form.Group>
             </Col>
             <Col md={4}>
               <Form.Group>
-                <Form.Label style={{ color: '#fff' }}>Peso (kg)</Form.Label>
+                <Form.Label>Peso (kg)</Form.Label>
                 <Form.Control
                   type="number"
                   step="0.1"
@@ -219,13 +190,12 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
                   value={formData.peso}
                   onChange={handleChange}
                   placeholder="Ej: 15.5"
-                  style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
                 />
               </Form.Group>
             </Col>
             <Col md={4}>
               <Form.Group>
-                <Form.Label style={{ color: '#fff' }}>Temperatura (°C)</Form.Label>
+                <Form.Label>Temperatura (°C)</Form.Label>
                 <Form.Control
                   type="number"
                   step="0.1"
@@ -233,16 +203,17 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
                   value={formData.temperatura}
                   onChange={handleChange}
                   placeholder="Ej: 38.5"
-                  style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
                 />
               </Form.Group>
             </Col>
           </Row>
 
-          <h6 style={{ color: '#d4a017' }} className="mt-3"><FaStethoscope className="me-2" /> Datos Clínicos</h6>
+          <h6 className="mb-3 text-primary mt-3">
+            <FaStethoscope className="me-2" /> Datos Clínicos
+          </h6>
           
           <Form.Group className="mb-3">
-            <Form.Label style={{ color: '#fff' }}>Diagnóstico *</Form.Label>
+            <Form.Label>Diagnóstico *</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
@@ -251,12 +222,11 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
               onChange={handleChange}
               placeholder="Describa el diagnóstico del paciente..."
               required
-              style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
             />
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label style={{ color: '#fff' }}>Tratamiento *</Form.Label>
+            <Form.Label>Tratamiento *</Form.Label>
             <Form.Control
               as="textarea"
               rows={3}
@@ -265,12 +235,11 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
               onChange={handleChange}
               placeholder="Indique el tratamiento a seguir..."
               required
-              style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
             />
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label style={{ color: '#fff' }}>Medicamentos Recetados</Form.Label>
+            <Form.Label>Medicamentos Recetados</Form.Label>
             <Form.Control
               as="textarea"
               rows={2}
@@ -278,12 +247,11 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
               value={formData.medicamentos}
               onChange={handleChange}
               placeholder="Lista de medicamentos, dosis y frecuencia..."
-              style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
             />
           </Form.Group>
 
           <Form.Group className="mb-3">
-            <Form.Label style={{ color: '#fff' }}>Observaciones</Form.Label>
+            <Form.Label>Observaciones</Form.Label>
             <Form.Control
               as="textarea"
               rows={2}
@@ -291,15 +259,14 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
               value={formData.observaciones}
               onChange={handleChange}
               placeholder="Notas adicionales, recomendaciones, seguimiento..."
-              style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
             />
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer style={{ backgroundColor: '#1a1a1a', borderTop: '1px solid #333' }}>
+        <Modal.Footer>
           <Button variant="secondary" onClick={onHide}>
             Cancelar
           </Button>
-          <Button type="submit" variant="primary" disabled={loading} style={{ backgroundColor: '#d4a017', border: 'none' }}>
+          <Button type="submit" variant="primary" disabled={loading}>
             <FaSave className="me-2" />
             {loading ? 'Guardando...' : 'Guardar Historia Clínica'}
           </Button>
