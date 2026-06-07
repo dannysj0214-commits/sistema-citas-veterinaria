@@ -18,7 +18,19 @@ const app = express();
 // Mostrar configuración de .env
 console.log('📁 .env cargado - MONGO_URI:', process.env.MONGO_URI);
 
-// ========== CONFIGURACIÓN CORS ==========
+// ========== CONFIGURACIÓN CORS CORREGIDA ==========
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:3000',
+  'http://localhost:5000',
+  'https://sistema-citas-api.onrender.com',
+  'https://sistemaveterinaria.netlify.app',
+  'https://sistema-citas-frontend.onrender.com',
+  'https://elaborate-lebkuchen-fd6abe.netlify.app',  // Tu dominio actual de Netlify
+  'https://sistema-citas-veterinaria.netlify.app'
+];
+
 app.use(cors({
   origin: function(origin, callback) {
     // Permitir solicitudes sin origen (Postman, curl)
@@ -29,27 +41,18 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Lista blanca para producción
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:5174',
-      'http://localhost:3000',
-      'http://localhost:5000',
-      'https://sistema-citas-api.onrender.com',
-      'https://sistemaveterinaria.netlify.app',
-      'https://sistema-citas-frontend.onrender.com'
-    ];
-    
+    // Verificar si el origen está permitido
     if (allowedOrigins.indexOf(origin) !== -1) {
+      console.log(`✅ CORS permitido: ${origin}`);
       callback(null, true);
     } else {
-      console.log(`⚠️ CORS bloqueado: ${origin}`);
-      callback(null, true); // Permite pero registra
+      console.log(`❌ CORS bloqueado: ${origin}`);
+      callback(new Error('CORS policy error'), false);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept']
 }));
 
 // Middlewares
@@ -82,10 +85,8 @@ app.get('/', (req, res) => {
 // ========== CONEXIÓN A MONGODB ==========
 const connectDB = async () => {
   try {
-    // Usar variable de entorno o forzar localhost
     let mongoURI = process.env.MONGO_URI;
     
-    // Si no hay variable de entorno o es inválida, usar localhost
     if (!mongoURI || mongoURI === 'undefined') {
       console.log('⚠️ MONGO_URI no definida, usando localhost');
       mongoURI = 'mongodb://localhost:27017/sistema_citas';
@@ -95,7 +96,6 @@ const connectDB = async () => {
     
     await mongoose.connect(mongoURI);
     
-    // Detectar qué base de datos se está usando
     if (mongoURI.includes('mongodb+srv')) {
       console.log('✅ Conectado a MongoDB ATLAS (nube)');
     } else if (mongoURI.includes('localhost') || mongoURI.includes('127.0.0.1')) {
@@ -128,5 +128,6 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`📡 Servidor corriendo en puerto ${PORT}`);
   console.log(`🌐 URL: http://localhost:${PORT}`);
   console.log(`🔗 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`📋 CORS permitidos: ${allowedOrigins.length} dominios`);
   console.log(`========================================\n`);
 });
