@@ -3,7 +3,7 @@ import { Container, Row, Col, Card, Form, Button, Alert } from 'react-bootstrap'
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'https://sistema-citas-api.onrender.com/api';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +18,8 @@ const Login = () => {
     setLoading(true);
 
     try {
+      console.log('🔐 Intentando login a:', `${API_URL}/auth/login`);
+      
       const response = await axios.post(`${API_URL}/auth/login`, { email, password });
       
       if (response.data.success) {
@@ -25,11 +27,14 @@ const Login = () => {
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
         const rol = response.data.user.rol;
+        console.log('✅ Login exitoso. Rol:', rol);
+        
         if (rol === 'admin') navigate('/admin-dashboard');
         else if (rol === 'profesional') navigate('/profesional-dashboard');
         else navigate('/cliente-dashboard');
       }
     } catch (error) {
+      console.error('❌ Error en login:', error);
       setError(error.response?.data?.message || 'Error al iniciar sesión');
     } finally {
       setLoading(false);
@@ -47,112 +52,65 @@ const Login = () => {
       <Container>
         <Row className="justify-content-center">
           <Col md={5}>
-            <Card style={{ 
-              backgroundColor: '#111111',
-              border: '1px solid #222222',
-              borderRadius: '15px',
-              boxShadow: 'none'
-            }}>
+            <Card style={{ backgroundColor: '#111111', border: '1px solid #333', borderRadius: '15px' }}>
               <Card.Body className="p-5">
                 <div className="text-center mb-4">
-                  <img 
-                    src="/logo.png" 
-                    alt="Logo Veterinaria" 
-                    style={{ 
-                      width: '90px', 
-                      height: '90px', 
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      marginBottom: '15px',
-                      border: '2px solid #ffffff'
-                    }} 
-                  />
-                  <h2 style={{ color: '#ffffff', fontSize: '1.4rem', fontWeight: 'bold', letterSpacing: '1px' }}>VETERINARIA</h2>
-                  <p style={{ color: '#999999', fontSize: '0.7rem', fontWeight: 'bold', marginTop: '8px' }}>
-                    LA VOZ DE LOS QUE NO TIENEN VOZ
-                  </p>
-                  <div style={{ 
-                    width: '40px', 
-                    height: '1px', 
-                    backgroundColor: '#333333', 
-                    margin: '20px auto' 
-                  }} />
-                  <h4 style={{ color: '#ffffff', fontSize: '1rem', fontWeight: 'normal' }}>INICIAR SESIÓN</h4>
+                  <div style={{ fontSize: '3rem' }}>🐕</div>
+                  <h2 style={{ color: '#d4a017', marginTop: '10px' }}>VETERINARIA</h2>
+                  <p style={{ color: '#aaa' }}>"La Voz de los que no tienen voz"</p>
+                  <hr style={{ backgroundColor: '#333' }} />
+                  <h4 style={{ color: '#fff' }}>Iniciar Sesión</h4>
                 </div>
                 
-                {error && <Alert variant="dark">{error}</Alert>}
+                {error && <Alert variant="danger">{error}</Alert>}
                 
                 <Form onSubmit={handleSubmit}>
                   <Form.Group className="mb-3">
-                    <Form.Label style={{ color: '#ffffff', fontSize: '0.8rem' }}>EMAIL</Form.Label>
+                    <Form.Label style={{ color: '#fff' }}>Email</Form.Label>
                     <Form.Control
                       type="email"
-                      style={{ 
-                        backgroundColor: '#1a1a1a', 
-                        border: '1px solid #333333', 
-                        color: '#ffffff',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem'
-                      }}
                       placeholder="Ingrese su email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                      style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
                       required
                     />
                   </Form.Group>
 
                   <Form.Group className="mb-4">
-                    <Form.Label style={{ color: '#ffffff', fontSize: '0.8rem' }}>CONTRASEÑA</Form.Label>
+                    <Form.Label style={{ color: '#fff' }}>Contraseña</Form.Label>
                     <Form.Control
                       type="password"
-                      style={{ 
-                        backgroundColor: '#1a1a1a', 
-                        border: '1px solid #333333', 
-                        color: '#ffffff',
-                        borderRadius: '8px',
-                        fontSize: '0.9rem'
-                      }}
                       placeholder="Ingrese su contraseña"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
+                      style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
                       required
                     />
                   </Form.Group>
 
                   <Button 
                     type="submit" 
-                    style={{ 
-                      backgroundColor: '#ffffff', 
-                      border: 'none', 
-                      fontWeight: 'bold',
-                      width: '100%',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      color: '#000000',
-                      fontSize: '0.9rem'
-                    }} 
+                    variant="primary" 
+                    className="w-100"
                     disabled={loading}
+                    style={{ backgroundColor: '#d4a017', border: 'none', fontWeight: 'bold' }}
                   >
-                    {loading ? 'INGRESANDO...' : 'INGRESAR'}
+                    {loading ? 'Ingresando...' : 'Ingresar'}
                   </Button>
                 </Form>
 
-                <div style={{ margin: '25px 0' }}>
-                  <div style={{ 
-                    background: 'linear-gradient(90deg, transparent, #333333, transparent)', 
-                    height: '1px' 
-                  }} />
-                </div>
+                <hr style={{ backgroundColor: '#333', marginTop: '20px' }} />
                 
                 <div className="text-center">
-                  <small style={{ color: '#666666', fontSize: '0.7rem' }}>CREDENCIALES DE PRUEBA</small>
-                  <div className="mt-2" style={{ fontSize: '0.7rem', color: '#999999' }}>
-                    <p className="mb-1"><strong style={{ color: '#ffffff' }}>ADMIN:</strong> admin@test.com / admin123</p>
-                    <p className="mb-1"><strong style={{ color: '#ffffff' }}>PROFESIONAL:</strong> profesional@test.com / 123456</p>
-                    <p><strong style={{ color: '#ffffff' }}>CLIENTE:</strong> REGISTRESE COMO CLIENTE  / PONGA SU CONTRAEÑA</p>
+                  <small style={{ color: '#666' }}>Credenciales de prueba:</small>
+                  <div className="mt-2" style={{ fontSize: '0.7rem', color: '#aaa' }}>
+                    <p className="mb-1"><strong style={{ color: '#d4a017' }}>Admin:</strong> admin@vet.com / admin123</p>
+                    <p className="mb-1"><strong style={{ color: '#d4a017' }}>Profesional:</strong> daniela@vet.com / admin123</p>
+                    <p><strong style={{ color: '#d4a017' }}>Cliente:</strong> carlos@cliente.com / admin123</p>
                   </div>
-                  <Link to="/register" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '0.75rem', marginTop: '15px', display: 'inline-block', borderBottom: '1px solid #333333' }}>
-                    ¿NO TIENES CUENTA? REGÍSTRATE
+                  <Link to="/register" style={{ color: '#d4a017', textDecoration: 'none', marginTop: '10px', display: 'inline-block' }}>
+                    ¿No tienes cuenta? Regístrate
                   </Link>
                 </div>
               </Card.Body>

@@ -65,6 +65,8 @@ const Register = () => {
     }
 
     try {
+      console.log('📝 Registrando usuario a:', `${API_URL}/auth/register`);
+      
       const response = await axios.post(`${API_URL}/auth/register`, dataToSend);
       
       if (response.data.success) {
@@ -74,7 +76,7 @@ const Register = () => {
         }, 2000);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error en registro:', error);
       setError(error.response?.data?.message || 'Error al registrar usuario');
     } finally {
       setLoading(false);
@@ -210,8 +212,8 @@ const Register = () => {
                   <small style={{ color: '#666' }}>Credenciales de prueba:</small>
                   <div className="mt-2" style={{ fontSize: '0.7rem', color: '#aaa' }}>
                     <p className="mb-1"><strong style={{ color: '#d4a017' }}>Admin:</strong> admin@vet.com / admin123</p>
-                    <p className="mb-1"><strong style={{ color: '#d4a017' }}>Profesional:</strong> daniela@vet.com / 123456</p>
-                    <p><strong style={{ color: '#d4a017' }}>Cliente:</strong> carlos@cliente.com / 123456</p>
+                    <p className="mb-1"><strong style={{ color: '#d4a017' }}>Profesional:</strong> daniela@vet.com / admin123</p>
+                    <p><strong style={{ color: '#d4a017' }}>Cliente:</strong> carlos@cliente.com / admin123</p>
                   </div>
                 </div>
               </Card.Body>
