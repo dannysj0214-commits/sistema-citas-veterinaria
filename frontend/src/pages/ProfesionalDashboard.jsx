@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Badge, Spinner, Alert, Tabs, Tab, Table, Button } from 'react-bootstrap';
 import { FaCalendarCheck, FaClock, FaCheckCircle, FaTimesCircle, FaFileMedical, FaEye, FaCalendarAlt, FaUserMd } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import axios from 'axios';
 import HorariosProfesional from '../components/HorariosProfesional';
 import ServiciosProfesional from '../components/ServiciosProfesional';
+
+// FORZAR URL DEL BACKEND EN LOCALHOST
+const API_URL = 'http://localhost:5000/api';
 
 const ProfesionalDashboard = () => {
   const [citas, setCitas] = useState([]);
@@ -13,6 +16,7 @@ const ProfesionalDashboard = () => {
   const [error, setError] = useState('');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
   const navigate = useNavigate();
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     cargarDatos();
@@ -21,16 +25,28 @@ const ProfesionalDashboard = () => {
   const cargarDatos = async () => {
     try {
       setLoading(true);
+      setError('');
       
-      const citasRes = await api.get('/appointments/profesional');
+      console.log('🔵 Cargando datos del profesional...');
+      console.log('🔗 API_URL:', API_URL);
+      
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+      
+      // Cargar citas
+      const citasRes = await axios.get(`${API_URL}/appointments/profesional`, config);
+      console.log('✅ Citas cargadas:', citasRes.data);
       setCitas(citasRes.data.data || []);
       
-      const historiasRes = await api.get('/medical-records/profesional/todas');
+      // Cargar historias clínicas
+      const historiasRes = await axios.get(`${API_URL}/medical-records/profesional/todas`, config);
+      console.log('✅ Historias cargadas:', historiasRes.data);
       setHistorias(historiasRes.data.data || []);
       
     } catch (error) {
-      console.error('Error cargando datos:', error);
-      setError('Error al cargar los datos');
+      console.error('❌ Error cargando datos:', error);
+      setError(error.response?.data?.message || 'Error al cargar los datos');
     } finally {
       setLoading(false);
     }
@@ -53,8 +69,11 @@ const ProfesionalDashboard = () => {
   if (error) {
     return (
       <Container>
-        <Alert variant="danger">{error}</Alert>
-        <Button onClick={cargarDatos}>Reintentar</Button>
+        <Alert variant="danger">
+          <Alert.Heading>Error</Alert.Heading>
+          <p>{error}</p>
+          <Button onClick={cargarDatos}>Reintentar</Button>
+        </Alert>
       </Container>
     );
   }
@@ -86,29 +105,63 @@ const ProfesionalDashboard = () => {
         </div>
         
         <Row className="mb-4">
-          <Col md={3}><Card className="text-center shadow-sm border-warning" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}><Card.Body><FaClock size={40} className="text-warning mb-2" /><h3 style={{ color: '#fff' }}>{citasPendientes}</h3><Card.Text style={{ color: '#aaa' }}>Pendientes</Card.Text></Card.Body></Card></Col>
-          <Col md={3}><Card className="text-center shadow-sm border-info" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}><Card.Body><FaCalendarCheck size={40} className="text-info mb-2" /><h3 style={{ color: '#fff' }}>{citasConfirmadas}</h3><Card.Text style={{ color: '#aaa' }}>Confirmadas</Card.Text></Card.Body></Card></Col>
-          <Col md={3}><Card className="text-center shadow-sm border-success" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}><Card.Body><FaCheckCircle size={40} className="text-success mb-2" /><h3 style={{ color: '#fff' }}>{citasCompletadas}</h3><Card.Text style={{ color: '#aaa' }}>Completadas</Card.Text></Card.Body></Card></Col>
-          <Col md={3}><Card className="text-center shadow-sm border-danger" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}><Card.Body><FaTimesCircle size={40} className="text-danger mb-2" /><h3 style={{ color: '#fff' }}>{citasCanceladas}</h3><Card.Text style={{ color: '#aaa' }}>Canceladas</Card.Text></Card.Body></Card></Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-warning" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaClock size={40} className="text-warning mb-2" />
+                <h3 style={{ color: '#fff' }}>{citasPendientes}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Pendientes</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-info" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaCalendarCheck size={40} className="text-info mb-2" />
+                <h3 style={{ color: '#fff' }}>{citasConfirmadas}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Confirmadas</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-success" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaCheckCircle size={40} className="text-success mb-2" />
+                <h3 style={{ color: '#fff' }}>{citasCompletadas}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Completadas</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-danger" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaTimesCircle size={40} className="text-danger mb-2" />
+                <h3 style={{ color: '#fff' }}>{citasCanceladas}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Canceladas</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
         </Row>
 
-        <Tabs defaultActiveKey="citas" className="mb-4">
+        <Tabs defaultActiveKey="citas" className="mb-4" id="profesional-tabs">
           <Tab eventKey="citas" title="Mis Citas">
             <Card className="shadow-sm mt-3" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Header as="h5" style={{ color: '#d4a017' }}>Próximas Citas</Card.Header>
               <Card.Body>
                 {citas.filter(c => c.estado === 'pendiente' || c.estado === 'confirmada').length === 0 ? (
-                  <p className="text-muted text-center">No hay citas próximas</p>
+                  <p className="text-muted text-center">No tienes citas próximas.</p>
                 ) : (
                   <div className="table-responsive">
                     <table className="table table-hover">
                       <thead>
                         <tr>
-                          <th style={{ color: '#fff' }}>Fecha</th>
-                          <th style={{ color: '#fff' }}>Hora</th>
-                          <th style={{ color: '#fff' }}>Cliente</th>
-                          <th style={{ color: '#fff' }}>Servicio</th>
-                          <th style={{ color: '#fff' }}>Estado</th>
-                          <th style={{ color: '#fff' }}>Acción</th>
+                          <th style={{ color: '#d4a017' }}>Fecha</th>
+                          <th style={{ color: '#d4a017' }}>Hora</th>
+                          <th style={{ color: '#d4a017' }}>Cliente</th>
+                          <th style={{ color: '#d4a017' }}>Servicio</th>
+                          <th style={{ color: '#d4a017' }}>Duración</th>
+                          <th style={{ color: '#d4a017' }}>Estado</th>
+                          <th style={{ color: '#d4a017' }}>Acción</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -116,10 +169,11 @@ const ProfesionalDashboard = () => {
                           <tr key={cita._id}>
                             <td style={{ color: '#fff' }}>{cita.fecha}</td>
                             <td style={{ color: '#fff' }}>{cita.hora}</td>
-                            <td style={{ color: '#fff' }}>{cita.id_cliente?.nombre}</td>
+                            <td style={{ color: '#fff' }}>{cita.id_cliente?.nombre || 'Cargando...'}</td>
                             <td style={{ color: '#fff' }}>{cita.servicio}</td>
+                            <td><Badge bg="primary">90 min</Badge></td>
                             <td><Badge bg={cita.estado === 'pendiente' ? 'warning' : 'info'}>{cita.estado}</Badge></td>
-                            <td><Button variant="primary" size="sm" onClick={() => navigate('/mis-citas')}>Atender</Button></td>
+                            <td><Button variant="primary" size="sm" onClick={() => navigate('/mis-citas')}>Ver/Atender</Button></td>
                           </tr>
                         ))}
                       </tbody>
@@ -132,32 +186,47 @@ const ProfesionalDashboard = () => {
           
           <Tab eventKey="historias" title="Historias Clínicas">
             <Card className="shadow-sm mt-3" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Header as="h5" style={{ color: '#d4a017' }}>
+                <FaFileMedical className="me-2" />
+                Historias Clínicas Realizadas ({historias.length})
+              </Card.Header>
               <Card.Body>
                 {historias.length === 0 ? (
-                  <p className="text-muted text-center">No hay historias clínicas</p>
+                  <div className="text-center py-4">
+                    <FaFileMedical size={50} className="text-muted mb-3" />
+                    <p className="text-muted">No has realizado ninguna historia clínica aún.</p>
+                    <p className="text-muted small">Cuando atiendas una cita, podrás crear la historia clínica aquí.</p>
+                  </div>
                 ) : (
                   <div className="table-responsive">
                     <table className="table table-hover">
                       <thead>
                         <tr>
-                          <th style={{ color: '#fff' }}>N° Historia</th>
-                          <th style={{ color: '#fff' }}>Fecha</th>
-                          <th style={{ color: '#fff' }}>Paciente</th>
-                          <th style={{ color: '#fff' }}>Propietario</th>
-                          <th style={{ color: '#fff' }}>Diagnóstico</th>
-                          <th style={{ color: '#fff' }}>Acción</th>
+                          <th style={{ color: '#d4a017' }}>N° Historia</th>
+                          <th style={{ color: '#d4a017' }}>Fecha</th>
+                          <th style={{ color: '#d4a017' }}>Paciente</th>
+                          <th style={{ color: '#d4a017' }}>Propietario</th>
+                          <th style={{ color: '#d4a017' }}>Diagnóstico</th>
+                          <th style={{ color: '#d4a017' }}>Tratamiento</th>
+                          <th style={{ color: '#d4a017' }}>Acción</th>
                         </tr>
                       </thead>
                       <tbody>
                         {historias.map(historia => (
                           <tr key={historia._id}>
-                            <td style={{ color: '#fff' }}><Badge bg="primary">{historia.hc_numero}</Badge></td>
+                            <td><Badge bg="primary">{historia.hc_numero}</Badge></td>
                             <td style={{ color: '#fff' }}>{new Date(historia.fecha).toLocaleDateString()}</td>
                             <td style={{ color: '#fff' }}><strong>{historia.paciente}</strong></td>
                             <td style={{ color: '#fff' }}>{historia.propietario}</td>
                             <td style={{ color: '#fff' }}>{historia.diagnostico?.substring(0, 40)}...</td>
+                            <td style={{ color: '#fff' }}>{historia.tratamiento?.substring(0, 40)}...</td>
                             <td>
-                              <Button variant="info" size="sm" onClick={() => navigate(`/ver-historia/${historia._id}`)}>
+                              <Button 
+                                variant="info" 
+                                size="sm"
+                                onClick={() => navigate(`/ver-historia/${historia._id}`)}
+                                title="Ver historia clínica completa"
+                              >
                                 <FaEye className="me-1" /> Ver
                               </Button>
                             </td>
@@ -173,13 +242,13 @@ const ProfesionalDashboard = () => {
           
           <Tab eventKey="horarios" title="Horarios">
             <div className="mt-3">
-              <HorariosProfesional profesionalId={user.id} token={localStorage.getItem('token')} />
+              <HorariosProfesional profesionalId={user.id} token={token} />
             </div>
           </Tab>
           
           <Tab eventKey="servicios" title="Servicios">
             <div className="mt-3">
-              <ServiciosProfesional profesionalId={user.id} token={localStorage.getItem('token')} />
+              <ServiciosProfesional profesionalId={user.id} token={token} />
             </div>
           </Tab>
         </Tabs>

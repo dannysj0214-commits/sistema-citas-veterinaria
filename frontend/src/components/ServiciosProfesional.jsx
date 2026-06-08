@@ -3,8 +3,8 @@ import { Card, Button, Table, Modal, Form, Row, Col, Alert, Badge } from 'react-
 import { FaPlus, FaEdit, FaTrash, FaStethoscope, FaDollarSign, FaClock, FaLightbulb } from 'react-icons/fa';
 import axios from 'axios';
 
-// FORZAR URL DEL BACKEND EN RENDER
-const API_URL = 'https://sistema-citas-api.onrender.com/api';
+// FORZAR URL DEL BACKEND EN LOCALHOST
+const API_URL = 'http://localhost:5000/api';
 
 // Servicios sugeridos predefinidos
 const SERVICIOS_SUGERIDOS = [

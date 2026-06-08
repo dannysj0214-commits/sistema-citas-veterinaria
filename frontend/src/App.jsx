@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './index.css';
 
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -20,7 +19,6 @@ import AgendarCita from './pages/AgendarCita';
 const PrivateRoute = ({ children, allowedRoles }) => {
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
   if (!token) return <Navigate to="/login" />;
   if (allowedRoles && !allowedRoles.includes(user.rol)) {
     return <Navigate to={`/${user.rol}-dashboard`} />;
@@ -31,15 +29,12 @@ const PrivateRoute = ({ children, allowedRoles }) => {
 const Layout = ({ children }) => {
   const token = localStorage.getItem('token');
   if (!token) return children;
-  
   return (
-    <div style={{ display: 'flex', backgroundColor: '#000000', minHeight: '100vh' }}>
+    <div style={{ display: 'flex' }}>
       <Sidebar />
-      <div style={{ flex: 1, backgroundColor: '#000000' }}>
+      <div style={{ flex: 1 }}>
         <Navbar />
-        <main style={{ padding: '20px', backgroundColor: '#000000' }}>
-          {children}
-        </main>
+        <main style={{ padding: '20px' }}>{children}</main>
       </div>
     </div>
   );
@@ -56,61 +51,34 @@ function App() {
         <Route path="/register" element={<Register />} />
         
         <Route path="/admin-dashboard" element={
-          <PrivateRoute allowedRoles={['admin']}>
-            <Layout><AdminDashboard /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['admin']}><Layout><AdminDashboard /></Layout></PrivateRoute>
         } />
-        
         <Route path="/profesional-dashboard" element={
-          <PrivateRoute allowedRoles={['profesional']}>
-            <Layout><ProfesionalDashboard /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['profesional']}><Layout><ProfesionalDashboard /></Layout></PrivateRoute>
         } />
-        
         <Route path="/cliente-dashboard" element={
-          <PrivateRoute allowedRoles={['cliente']}>
-            <Layout><ClienteDashboard /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['cliente']}><Layout><ClienteDashboard /></Layout></PrivateRoute>
         } />
-        
         <Route path="/mis-citas" element={
-          <PrivateRoute allowedRoles={['cliente', 'profesional']}>
-            <Layout><MisCitas /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['cliente', 'profesional']}><Layout><MisCitas /></Layout></PrivateRoute>
         } />
-        
         <Route path="/agendar-cita" element={
-          <PrivateRoute allowedRoles={['cliente']}>
-            <Layout><AgendarCita /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['cliente']}><Layout><AgendarCita /></Layout></PrivateRoute>
         } />
-        
         <Route path="/reportes" element={
-          <PrivateRoute allowedRoles={['admin']}>
-            <Layout><Reportes /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['admin']}><Layout><Reportes /></Layout></PrivateRoute>
         } />
-        
         <Route path="/profesionales" element={
-          <PrivateRoute allowedRoles={['admin']}>
-            <Layout><Profesionales /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['admin']}><Layout><Profesionales /></Layout></PrivateRoute>
         } />
-        
         <Route path="/clientes" element={
-          <PrivateRoute allowedRoles={['admin']}>
-            <Layout><Clientes /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['admin']}><Layout><Clientes /></Layout></PrivateRoute>
         } />
-        
         <Route path="/ver-historia/:id" element={
-          <PrivateRoute allowedRoles={['cliente', 'profesional']}>
-            <Layout><VerHistoria /></Layout>
-          </PrivateRoute>
+          <PrivateRoute allowedRoles={['cliente', 'profesional']}><Layout><VerHistoria /></Layout></PrivateRoute>
         } />
         
-        <Route path="/" element={
-          !token ? <Navigate to="/login" /> : 
+        <Route path="/" element={!token ? <Navigate to="/login" /> : 
           user.rol === 'admin' ? <Navigate to="/admin-dashboard" /> :
           user.rol === 'profesional' ? <Navigate to="/profesional-dashboard" /> :
           <Navigate to="/cliente-dashboard" />

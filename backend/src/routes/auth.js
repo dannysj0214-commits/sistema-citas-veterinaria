@@ -5,23 +5,11 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const { auth } = require('../middleware/auth');
 
-// ========== REGISTRO DE USUARIO ==========
+// ========== REGISTRO ==========
 router.post('/register', async (req, res) => {
   try {
-    console.log('📝 Registro - Datos recibidos:', req.body);
-    
     const { nombre, email, password, telefono, rol, especialidad } = req.body;
     
-    // Validaciones
-    if (!nombre || !email || !password || !telefono) {
-      return res.status(400).json({ success: false, message: 'Todos los campos son requeridos' });
-    }
-    
-    if (password.length < 6) {
-      return res.status(400).json({ success: false, message: 'La contraseña debe tener al menos 6 caracteres' });
-    }
-    
-    // Verificar si el usuario ya existe
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ success: false, message: 'El email ya está registrado' });
@@ -30,39 +18,28 @@ router.post('/register', async (req, res) => {
     // Encriptar contraseña
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    console.log('✅ Contraseña encriptada correctamente');
     
-    // Crear usuario
-    const userData = {
+    const user = new User({
       nombre,
       email,
       password: hashedPassword,
       telefono,
-      rol: rol || 'cliente'
-    };
-    
-    if (rol === 'profesional' && especialidad) {
-      userData.especialidad = especialidad;
-    }
-    
-    const user = new User(userData);
-    await user.save();
-    console.log('✅ Usuario guardado:', user.email);
-    
-    res.json({
-      success: true,
-      message: 'Usuario registrado exitosamente. Por favor inicia sesión.'
+      rol: rol || 'cliente',
+      especialidad: rol === 'profesional' ? especialidad : undefined
     });
+    
+    await user.save();
+    
+    res.json({ success: true, message: 'Usuario registrado exitosamente' });
   } catch (error) {
-    console.error('❌ Error en registro:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });
 
-// ========== INICIO DE SESIÓN ==========
+// ========== LOGIN ==========
 router.post('/login', async (req, res) => {
   try {
-    console.log('🔐 Login intento:', req.body.email);
+    console.log('🔐 Login intento - Email:', req.body.email);
     
     const { email, password } = req.body;
     
@@ -77,17 +54,17 @@ router.post('/login', async (req, res) => {
     }
     
     console.log('✅ Usuario encontrado:', user.email);
-    console.log('🔑 Hash guardado:', user.password);
+    console.log('📝 Contraseña guardada en BD:', user.password);
+    console.log('🔑 Contraseña ingresada:', password);
     
-    // Comparar contraseña (funciona tanto con texto plano como con hash)
     let isMatch = false;
     
-    // Si la contraseña guardada comienza con $2a$, es un hash de bcrypt
-    if (user.password.startsWith('$2a$')) {
+    // Si la contraseña guardada empieza con $2a$, es bcrypt
+    if (user.password && user.password.startsWith('$2a$')) {
       isMatch = await bcrypt.compare(password, user.password);
       console.log('🔐 Comparando con bcrypt');
     } else {
-      // Comparación directa para contraseñas en texto plano (útil para migración)
+      // Si es texto plano, comparar directamente
       isMatch = (password === user.password);
       console.log('🔐 Comparando en texto plano');
     }
@@ -98,10 +75,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
     
-    // Crear token
     const token = jwt.sign(
       { id: user._id, email: user.email, rol: user.rol },
-      process.env.JWT_SECRET || 'mi_secreto_super_seguro',
+      process.env.JWT_SECRET || 'mi_clave_secreta_local',
       { expiresIn: '7d' }
     );
     
@@ -109,15 +85,12 @@ router.post('/login', async (req, res) => {
     
     res.json({
       success: true,
-      message: 'Inicio de sesión exitoso',
       token,
       user: {
         id: user._id,
         nombre: user.nombre,
         email: user.email,
-        rol: user.rol,
-        telefono: user.telefono,
-        especialidad: user.especialidad
+        rol: user.rol
       }
     });
   } catch (error) {
@@ -126,44 +99,17 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ========== OBTENER PERFIL ==========
+// ========== PERFIL ==========
 router.get('/profile', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.userId).select('-password');
-    res.json({ success: true, data: user });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
+  const user = await User.findById(req.userId).select('-password');
+  res.json({ success: true, data: user });
 });
 
-// ========== LISTAR PROFESIONALES ==========
+// ========== PROFESIONALES ==========
 router.get('/profesionales', async (req, res) => {
-  try {
-    const profesionales = await User.find({ rol: 'profesional', disponible: true })
-      .select('nombre email especialidad telefono');
-    res.json({ success: true, data: profesionales });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-});
-
-// ========== ACTUALIZAR PERFIL ==========
-router.put('/profile', auth, async (req, res) => {
-  try {
-    const { nombre, telefono } = req.body;
-    const user = await User.findById(req.userId);
-    
-    if (nombre) user.nombre = nombre;
-    if (telefono) user.telefono = telefono;
-    
-    await user.save();
-    res.json({ success: true, message: 'Perfil actualizado', data: user });
-  } catch (error) {
-    console.error('Error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
+  const profesionales = await User.find({ rol: 'profesional', disponible: true })
+    .select('nombre email especialidad');
+  res.json({ success: true, data: profesionales });
 });
 
 module.exports = router;

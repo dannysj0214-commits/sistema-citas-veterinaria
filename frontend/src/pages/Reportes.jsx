@@ -7,6 +7,7 @@ import { FaDownload, FaChartPie, FaChartBar, FaUsers, FaCalendarCheck, FaFileMed
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
+// FORZAR URL DEL BACKEND EN LOCALHOST
 const API_URL = 'http://localhost:5000/api';
 
 const Reportes = () => {
@@ -34,12 +35,15 @@ const Reportes = () => {
       setError('');
       
       console.log('🔵 Cargando datos de reportes...');
+      console.log('🔗 API_URL:', API_URL);
+      
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
       
       // 1. Cargar estadísticas generales
       try {
-        const statsRes = await axios.get(`${API_URL}/reports/stats`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const statsRes = await axios.get(`${API_URL}/reports/stats`, config);
         console.log('✅ Stats:', statsRes.data);
         if (statsRes.data.success) {
           setStats(statsRes.data.data);
@@ -51,9 +55,7 @@ const Reportes = () => {
       
       // 2. Cargar citas por estado
       try {
-        const estadoRes = await axios.get(`${API_URL}/reports/citas-por-estado`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const estadoRes = await axios.get(`${API_URL}/reports/citas-por-estado`, config);
         console.log('✅ Citas por estado:', estadoRes.data);
         setCitasPorEstado(estadoRes.data.data || []);
       } catch (err) {
@@ -63,9 +65,7 @@ const Reportes = () => {
       
       // 3. Cargar citas por mes
       try {
-        const mesRes = await axios.get(`${API_URL}/reports/citas-por-mes`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const mesRes = await axios.get(`${API_URL}/reports/citas-por-mes`, config);
         console.log('✅ Citas por mes:', mesRes.data);
         setCitasPorMes(mesRes.data.data || []);
       } catch (err) {
@@ -75,9 +75,7 @@ const Reportes = () => {
       
       // 4. Cargar top profesionales
       try {
-        const topRes = await axios.get(`${API_URL}/reports/top-profesionales`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const topRes = await axios.get(`${API_URL}/reports/top-profesionales`, config);
         console.log('✅ Top profesionales:', topRes.data);
         setTopProfesionales(topRes.data.data || []);
       } catch (err) {
@@ -121,7 +119,6 @@ const Reportes = () => {
     }
   };
 
-  // Preparar datos para gráfico de pastel
   const pieData = {
     labels: citasPorEstado.length > 0 
       ? citasPorEstado.map(item => {
@@ -135,15 +132,11 @@ const Reportes = () => {
           return estados[item._id] || item._id;
         })
       : ['Sin datos'],
-    datasets: [
-      {
-        data: citasPorEstado.length > 0 
-          ? citasPorEstado.map(item => item.count)
-          : [1],
-        backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545', '#6c757d'],
-        borderWidth: 1,
-      },
-    ],
+    datasets: [{
+      data: citasPorEstado.length > 0 ? citasPorEstado.map(item => item.count) : [1],
+      backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545', '#6c757d'],
+      borderWidth: 1,
+    }],
   };
 
   const pieOptions = {
@@ -154,7 +147,6 @@ const Reportes = () => {
     }
   };
 
-  // Preparar datos para gráfico de barras
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const citasPorMesData = new Array(12).fill(0);
   
@@ -168,15 +160,13 @@ const Reportes = () => {
 
   const barData = {
     labels: meses,
-    datasets: [
-      {
-        label: 'Citas',
-        data: citasPorMesData,
-        backgroundColor: '#36A2EB',
-        borderRadius: 5,
-        borderWidth: 1,
-      },
-    ],
+    datasets: [{
+      label: 'Citas',
+      data: citasPorMesData,
+      backgroundColor: '#36A2EB',
+      borderRadius: 5,
+      borderWidth: 1,
+    }],
   };
 
   const barOptions = {
@@ -215,217 +205,187 @@ const Reportes = () => {
   }
 
   return (
-    <Container fluid>
-      <div className="d-flex justify-content-between align-items-center mb-4">
-        <h2>Reportes y Estadísticas</h2>
-        <Button 
-          variant="success" 
-          onClick={handleExportarJSON}
-          disabled={exportando}
-        >
-          <FaDownload className="me-2" />
-          {exportando ? 'Exportando...' : 'Exportar a JSON'}
-        </Button>
-      </div>
+    <div style={{ 
+      minHeight: '100vh', 
+      backgroundImage: 'url(/logo.png)',
+      backgroundSize: 'contain',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'repeat',
+      backgroundColor: '#000000',
+      position: 'relative'
+    }}>
+      <div style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.85)',
+        zIndex: 0
+      }} />
+      
+      <Container fluid style={{ position: 'relative', zIndex: 1, padding: '20px' }}>
+        <div className="d-flex justify-content-between align-items-center mb-4">
+          <h2 style={{ color: '#d4a017' }}>Reportes y Estadísticas</h2>
+          <Button variant="success" onClick={handleExportarJSON} disabled={exportando}>
+            <FaDownload className="me-2" /> {exportando ? 'Exportando...' : 'Exportar a JSON'}
+          </Button>
+        </div>
 
-      {/* Tarjetas de resumen */}
-      <Row className="mb-4">
-        <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm border-primary">
-            <Card.Body>
-              <FaCalendarCheck size={40} className="text-primary mb-2" />
-              <h3>{stats.citas?.total || 0}</h3>
-              <Card.Text>Total Citas</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm border-success">
-            <Card.Body>
-              <FaUsers size={40} className="text-success mb-2" />
-              <h3>{stats.usuarios?.clientes || 0}</h3>
-              <Card.Text>Clientes Registrados</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm border-info">
-            <Card.Body>
-              <FaUsers size={40} className="text-info mb-2" />
-              <h3>{stats.usuarios?.profesionales || 0}</h3>
-              <Card.Text>Profesionales</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-        <Col md={3} className="mb-3">
-          <Card className="text-center shadow-sm border-warning">
-            <Card.Body>
-              <FaFileMedical size={40} className="text-warning mb-2" />
-              <h3>{stats.historias || 0}</h3>
-              <Card.Text>Historias Clínicas</Card.Text>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+        <Row className="mb-4">
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-primary" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaCalendarCheck size={40} className="text-primary mb-2" />
+                <h3 style={{ color: '#fff' }}>{stats.citas?.total || 0}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Total Citas</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-success" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaUsers size={40} className="text-success mb-2" />
+                <h3 style={{ color: '#fff' }}>{stats.usuarios?.clientes || 0}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Clientes Registrados</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-info" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaUsers size={40} className="text-info mb-2" />
+                <h3 style={{ color: '#fff' }}>{stats.usuarios?.profesionales || 0}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Profesionales</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+          <Col md={3} className="mb-3">
+            <Card className="text-center shadow-sm border-warning" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)' }}>
+              <Card.Body>
+                <FaFileMedical size={40} className="text-warning mb-2" />
+                <h3 style={{ color: '#fff' }}>{stats.historias || 0}</h3>
+                <Card.Text style={{ color: '#aaa' }}>Historias Clínicas</Card.Text>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Gráficos */}
-      <Row className="mb-4">
-        <Col md={6} className="mb-4">
-          <Card className="shadow-sm h-100">
-            <Card.Header as="h5" className="bg-primary text-white">
-              <FaChartPie className="me-2" />
-              Distribución por Estado
-            </Card.Header>
-            <Card.Body className="text-center">
-              {citasPorEstado.length > 0 ? (
-                <div style={{ maxWidth: '400px', margin: '0 auto' }}>
-                  <Pie data={pieData} options={pieOptions} />
-                </div>
-              ) : (
-                <p className="text-muted">No hay datos de citas por estado</p>
-              )}
-            </Card.Body>
-            <Card.Footer className="text-muted">
-              Total de citas analizadas: {stats.citas?.total || 0}
-            </Card.Footer>
-          </Card>
-        </Col>
-        <Col md={6} className="mb-4">
-          <Card className="shadow-sm h-100">
-            <Card.Header as="h5" className="bg-primary text-white">
-              <FaChartBar className="me-2" />
-              Citas por Mes
-            </Card.Header>
-            <Card.Body>
-              {citasPorMes.length > 0 ? (
-                <Bar options={barOptions} data={barData} />
-              ) : (
-                <p className="text-muted text-center">No hay datos de citas por mes</p>
-              )}
-            </Card.Body>
-            <Card.Footer className="text-muted">
-              Distribución mensual de las citas
-            </Card.Footer>
-          </Card>
-        </Col>
-      </Row>
+        <Row className="mb-4">
+          <Col md={6} className="mb-4">
+            <Card className="shadow-sm h-100" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)', border: '1px solid #333' }}>
+              <Card.Header className="bg-primary text-white" style={{ backgroundColor: '#1a1a1a', color: '#d4a017' }}>
+                <FaChartPie className="me-2" /> Distribución por Estado
+              </Card.Header>
+              <Card.Body className="text-center">
+                {citasPorEstado.length > 0 ? (
+                  <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+                    <Pie data={pieData} options={pieOptions} />
+                  </div>
+                ) : (
+                  <p className="text-muted">No hay datos de citas por estado</p>
+                )}
+              </Card.Body>
+              <Card.Footer className="text-muted">
+                Total de citas analizadas: {stats.citas?.total || 0}
+              </Card.Footer>
+            </Card>
+          </Col>
+          <Col md={6} className="mb-4">
+            <Card className="shadow-sm h-100" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)', border: '1px solid #333' }}>
+              <Card.Header className="bg-primary text-white" style={{ backgroundColor: '#1a1a1a', color: '#d4a017' }}>
+                <FaChartBar className="me-2" /> Citas por Mes
+              </Card.Header>
+              <Card.Body>
+                {citasPorMes.length > 0 ? (
+                  <Bar options={barOptions} data={barData} />
+                ) : (
+                  <p className="text-muted text-center">No hay datos de citas por mes</p>
+                )}
+              </Card.Body>
+              <Card.Footer className="text-muted">
+                Distribución mensual de las citas
+              </Card.Footer>
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Top Profesionales */}
-      <Row className="mb-4">
-        <Col md={12}>
-          <Card className="shadow-sm">
-            <Card.Header as="h5" className="bg-success text-white">
-              <FaUsers className="me-2" />
-              Top Profesionales con más citas atendidas
-            </Card.Header>
-            <Card.Body>
-              {topProfesionales.length > 0 ? (
-                <Table striped hover responsive>
-                  <thead>
-                    <tr className="table-success">
-                      <th>#</th>
-                      <th>Nombre</th>
-                      <th>Especialidad</th>
-                      <th>Citas Atendidas</th>
-                      <th>Porcentaje</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topProfesionales.map((prof, index) => {
-                      const porcentaje = stats.citas?.total > 0 
-                        ? Math.round((prof.citas / stats.citas.total) * 100) 
-                        : 0;
-                      return (
-                        <tr key={index}>
-                          <td><strong>{index + 1}</strong></td>
-                          <td>{prof.nombre}</td>
-                          <td>{prof.especialidad || 'General'}</td>
-                          <td>
-                            <span className="badge bg-success rounded-pill">
-                              {prof.citas} citas
-                            </span>
-                          </td>
-                          <td>
-                            <div className="progress" style={{ height: '20px' }}>
-                              <div 
-                                className="progress-bar bg-success" 
-                                style={{ width: `${porcentaje}%` }}
-                              >
-                                {porcentaje}%
-                              </div>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </Table>
-              ) : (
-                <p className="text-muted text-center">No hay datos de profesionales</p>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+        <Row className="mb-4">
+          <Col md={12}>
+            <Card className="shadow-sm" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)', border: '1px solid #333' }}>
+              <Card.Header className="bg-success text-white" style={{ backgroundColor: '#1a1a1a', color: '#d4a017' }}>
+                <FaUsers className="me-2" /> Top Profesionales con más citas atendidas
+              </Card.Header>
+              <Card.Body>
+                {topProfesionales.length > 0 ? (
+                  <Table striped hover responsive>
+                    <thead>
+                      <tr className="table-success">
+                        <th>#</th><th>Nombre</th><th>Especialidad</th><th>Citas Atendidas</th><th>Porcentaje</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {topProfesionales.map((prof, index) => {
+                        const porcentaje = stats.citas?.total > 0 ? Math.round((prof.citas / stats.citas.total) * 100) : 0;
+                        return (
+                          <tr key={index}>
+                            <td><strong>{index + 1}</strong></td>
+                            <td>{prof.nombre}</td>
+                            <td>{prof.especialidad || 'General'}</td>
+                            <td><span className="badge bg-success rounded-pill">{prof.citas} citas</span></td>
+                            <td><div className="progress" style={{ height: '20px' }}><div className="progress-bar bg-success" style={{ width: `${porcentaje}%` }}>{porcentaje}%</div></div></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </Table>
+                ) : (
+                  <p className="text-muted text-center">No hay datos de profesionales</p>
+                )}
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Resumen detallado */}
-      <Row>
-        <Col md={12}>
-          <Card className="shadow-sm">
-            <Card.Header as="h5" className="bg-info text-white">
-              Resumen Detallado
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                <Col md={3} className="text-center border-end">
-                  <h6 className="text-muted">Citas Completadas</h6>
-                  <h2 className="text-success">{stats.citas?.completadas || 0}</h2>
-                  <small className="text-muted">
-                    {stats.citas?.total > 0 
-                      ? `${Math.round((stats.citas.completadas / stats.citas.total) * 100)}% del total`
-                      : '0% del total'}
-                  </small>
-                </Col>
-                <Col md={3} className="text-center border-end">
-                  <h6 className="text-muted">Citas Pendientes</h6>
-                  <h2 className="text-warning">{stats.citas?.pendientes || 0}</h2>
-                  <small className="text-muted">
-                    {stats.citas?.total > 0 
-                      ? `${Math.round((stats.citas.pendientes / stats.citas.total) * 100)}% del total`
-                      : '0% del total'}
-                  </small>
-                </Col>
-                <Col md={3} className="text-center border-end">
-                  <h6 className="text-muted">Citas Canceladas</h6>
-                  <h2 className="text-danger">{stats.citas?.canceladas || 0}</h2>
-                  <small className="text-muted">
-                    {stats.citas?.total > 0 
-                      ? `${Math.round((stats.citas.canceladas / stats.citas.total) * 100)}% del total`
-                      : '0% del total'}
-                  </small>
-                </Col>
-                <Col md={3} className="text-center">
-                  <h6 className="text-muted">Tasa de Éxito</h6>
-                  <h2 className="text-primary">
-                    {stats.citas?.total > 0 
-                      ? Math.round((stats.citas.completadas / stats.citas.total) * 100) 
-                      : 0}%
-                  </h2>
-                  <small className="text-muted">Citas completadas exitosamente</small>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+        <Row>
+          <Col md={12}>
+            <Card className="shadow-sm" style={{ backgroundColor: 'rgba(26, 26, 26, 0.9)', border: '1px solid #333' }}>
+              <Card.Header className="bg-info text-white" style={{ backgroundColor: '#1a1a1a', color: '#d4a017' }}>
+                Resumen Detallado
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={3} className="text-center border-end">
+                    <h6 className="text-muted">Citas Completadas</h6>
+                    <h2 className="text-success">{stats.citas?.completadas || 0}</h2>
+                    <small className="text-muted">{stats.citas?.total > 0 ? `${Math.round((stats.citas.completadas / stats.citas.total) * 100)}% del total` : '0% del total'}</small>
+                  </Col>
+                  <Col md={3} className="text-center border-end">
+                    <h6 className="text-muted">Citas Pendientes</h6>
+                    <h2 className="text-warning">{stats.citas?.pendientes || 0}</h2>
+                    <small className="text-muted">{stats.citas?.total > 0 ? `${Math.round((stats.citas.pendientes / stats.citas.total) * 100)}% del total` : '0% del total'}</small>
+                  </Col>
+                  <Col md={3} className="text-center border-end">
+                    <h6 className="text-muted">Citas Canceladas</h6>
+                    <h2 className="text-danger">{stats.citas?.canceladas || 0}</h2>
+                    <small className="text-muted">{stats.citas?.total > 0 ? `${Math.round((stats.citas.canceladas / stats.citas.total) * 100)}% del total` : '0% del total'}</small>
+                  </Col>
+                  <Col md={3} className="text-center">
+                    <h6 className="text-muted">Tasa de Éxito</h6>
+                    <h2 className="text-primary">{stats.citas?.total > 0 ? Math.round((stats.citas.completadas / stats.citas.total) * 100) : 0}%</h2>
+                    <small className="text-muted">Citas completadas exitosamente</small>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          </Col>
+        </Row>
 
-      {/* Fecha de generación */}
-      <div className="text-center mt-4">
-        <small className="text-muted">
-          Reporte generado el: {new Date().toLocaleString()}
-        </small>
-      </div>
-    </Container>
+        <div className="text-center mt-4">
+          <small className="text-muted">Reporte generado el: {new Date().toLocaleString()}</small>
+        </div>
+      </Container>
+    </div>
   );
 };
 

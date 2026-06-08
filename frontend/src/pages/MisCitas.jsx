@@ -25,6 +25,9 @@ const MisCitas = () => {
       setLoading(true);
       setError('');
       
+      console.log('🔵 Cargando citas para:', user.rol);
+      
+      // 1. Cargar citas según el rol
       let citasRes;
       if (user.rol === 'cliente') {
         citasRes = await api.get('/appointments/cliente');
@@ -33,17 +36,29 @@ const MisCitas = () => {
       }
       setCitas(citasRes.data.data || []);
       
-      // Cargar historias para saber qué citas tienen historia clínica
+      // 2. Cargar historias según el rol
+      const map = {};
       if (user.rol === 'cliente') {
+        // Cliente: usa su propio endpoint
         const historiasRes = await api.get('/medical-records/cliente');
-        const map = {};
         (historiasRes.data.data || []).forEach(historia => {
           if (historia.appointment_id) {
             map[historia.appointment_id] = historia._id;
           }
         });
-        setHistoriasMap(map);
+      } else if (user.rol === 'profesional') {
+        // Profesional: usa el endpoint de profesionales
+        const historiasRes = await api.get('/medical-records/profesional/todas');
+        (historiasRes.data.data || []).forEach(historia => {
+          if (historia.appointment_id) {
+            map[historia.appointment_id] = historia._id;
+          }
+        });
       }
+      setHistoriasMap(map);
+      
+      console.log('📋 Citas:', citasRes.data.data?.length);
+      console.log('📚 Historias mapeadas:', Object.keys(map).length);
       
     } catch (error) {
       console.error('Error cargando datos:', error);
@@ -60,7 +75,6 @@ const MisCitas = () => {
         cargarDatos();
         alert('Cita cancelada exitosamente');
       } catch (error) {
-        console.error('Error:', error);
         alert(error.response?.data?.message || 'Error al cancelar');
       }
     }
@@ -72,7 +86,6 @@ const MisCitas = () => {
       cargarDatos();
       alert('Cita confirmada');
     } catch (error) {
-      console.error('Error:', error);
       alert('Error al confirmar');
     }
   };
@@ -83,7 +96,6 @@ const MisCitas = () => {
       cargarDatos();
       alert('Cita rechazada');
     } catch (error) {
-      console.error('Error:', error);
       alert('Error al rechazar');
     }
   };
@@ -225,8 +237,8 @@ const MisCitas = () => {
                                 </Button>
                               )}
                               
-                              {/* Ver historia clínica */}
-                              {cita.estado === 'completada' && (
+                              {/* Ver historia clínica - cuando existe historia asociada */}
+                              {historiaId && (
                                 <Button variant="info" size="sm" onClick={() => verHistoria(historiaId)}>
                                   <FaEye className="me-1" /> Ver Historia
                                 </Button>

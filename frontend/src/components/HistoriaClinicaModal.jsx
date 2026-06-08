@@ -1,63 +1,87 @@
-import React, { useState, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
+import React, { useState } from 'react';
+import { Modal, Button, Form, Row, Col, Alert } from 'react-bootstrap';
+import { FaSave, FaFilePdf, FaPaw, FaStethoscope } from 'react-icons/fa';
 import api from '../services/api';
 
-const HistoriaClinicaModal = ({ show, onHide, cita, onSuccess }) => {
+const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida, token }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
   const [formData, setFormData] = useState({
-    propietario: { nombre: '', apellidos: '', tipo_documento: 'CC', numero_documento: '', telefono_celular: '', email: '' },
-    paciente: { nombre: '', especie: '', raza: '', sexo: 'Macho', peso_gr: '', color_pelaje: '' },
-    motivo_consulta: '',
-    sintomas: '',
-    temperatura: '',
+    paciente: '',
+    especie: 'Canino',
+    raza: '',
+    edad: '',
     peso: '',
-    frecuencia_cardiaca: '',
-    frecuencia_respiratoria: '',
+    temperatura: '',
     diagnostico: '',
     tratamiento: '',
-    observaciones: '',
-    medicamentos: [{ nombre: '', dosis: '', frecuencia: '', duracion: '' }],
-    proxima_cita: { fecha: '', motivo: '' },
-    profesional_nombre: '',
-    profesional_matricula: ''
+    medicamentos: '',
+    observaciones: ''
   });
 
-  useEffect(() => {
-    if (cita) {
-      setFormData(prev => ({ ...prev, motivo_consulta: cita.motivo || '', sintomas: cita.sintomas || '' }));
-    }
-  }, [cita]);
-
-  const handleChange = (section, field, value) => {
-    setFormData({ ...formData, [section]: { ...formData[section], [field]: value } });
-  };
-
-  const handleMedicamentoChange = (index, field, value) => {
-    const nuevos = [...formData.medicamentos];
-    nuevos[index][field] = value;
-    setFormData({ ...formData, medicamentos: nuevos });
-  };
-
-  const addMedicamento = () => {
-    setFormData({ ...formData, medicamentos: [...formData.medicamentos, { nombre: '', dosis: '', frecuencia: '', duracion: '' }] });
-  };
-
-  const removeMedicamento = (index) => {
-    setFormData({ ...formData, medicamentos: formData.medicamentos.filter((_, i) => i !== index) });
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccess('');
+
+    if (!formData.paciente) {
+      setError('El nombre del paciente es requerido');
+      setLoading(false);
+      return;
+    }
+    if (!formData.diagnostico) {
+      setError('El diagnóstico es requerido');
+      setLoading(false);
+      return;
+    }
+    if (!formData.tratamiento) {
+      setError('El tratamiento es requerido');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await api.post('/medical-records', { cita_id: cita._id, ...formData });
-      if (onSuccess) onSuccess();
-      onHide();
-      alert('✅ Historia clínica guardada');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar');
+      // Usar api en lugar de axios directo (api ya maneja el token)
+      const response = await api.post('/medical-records', {
+        propietario: cita?.id_cliente?.nombre || '',
+        paciente: formData.paciente,
+        especie: formData.especie,
+        raza: formData.raza,
+        edad: formData.edad,
+        peso: formData.peso,
+        temperatura: formData.temperatura,
+        diagnostico: formData.diagnostico,
+        tratamiento: formData.tratamiento,
+        medicamentos: formData.medicamentos,
+        observaciones: formData.observaciones,
+        cliente_id: cita?.id_cliente?._id,
+        appointment_id: cita?._id
+      });
+
+      if (response.data.success) {
+        setSuccess('Historia clínica guardada exitosamente');
+        
+        // Actualizar estado de la cita a completada
+        await api.put(`/appointments/${cita._id}/estado`, { estado: 'completada' });
+        
+        setTimeout(() => {
+          onCitaAtendida();
+          onHide();
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error al guardar:', error);
+      setError(error.response?.data?.message || 'Error al guardar la historia clínica');
     } finally {
       setLoading(false);
     }
@@ -65,67 +89,191 @@ const HistoriaClinicaModal = ({ show, onHide, cita, onSuccess }) => {
 
   return (
     <Modal show={show} onHide={onHide} size="lg" backdrop="static">
-      <Modal.Header closeButton className="bg-dark text-white">
-        <Modal.Title><i className="fas fa-file-medical me-2"></i>Historia Clínica</Modal.Title>
+      <Modal.Header closeButton className="bg-primary text-white">
+        <Modal.Title>
+          <FaFilePdf className="me-2" />
+          Atención de Cita - Historia Clínica
+        </Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
         <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {error && <Alert variant="danger">{error}</Alert>}
-          <div className="text-center mb-4"><h4>LA VETERINARIA</h4><p>"La Voz de los que no tienen voz"</p><hr /></div>
+          {success && <Alert variant="success">{success}</Alert>}
 
-          <div className="card mb-3"><div className="card-header bg-dark text-white">DATOS DEL PROPIETARIO</div><div className="card-body"><Row>
-            <Col md="6"><Form.Label>Nombre</Form.Label><Form.Control value={formData.propietario.nombre} onChange={(e) => handleChange('propietario', 'nombre', e.target.value)} required /></Col>
-            <Col md="6"><Form.Label>Apellidos</Form.Label><Form.Control value={formData.propietario.apellidos} onChange={(e) => handleChange('propietario', 'apellidos', e.target.value)} required /></Col>
-            <Col md="3"><Form.Label>Tipo Doc.</Form.Label><Form.Select value={formData.propietario.tipo_documento} onChange={(e) => handleChange('propietario', 'tipo_documento', e.target.value)}><option value="CC">CC</option><option value="TI">TI</option><option value="CE">CE</option></Form.Select></Col>
-            <Col md="3"><Form.Label>N° Documento</Form.Label><Form.Control value={formData.propietario.numero_documento} onChange={(e) => handleChange('propietario', 'numero_documento', e.target.value)} required /></Col>
-            <Col md="6"><Form.Label>Teléfono</Form.Label><Form.Control value={formData.propietario.telefono_celular} onChange={(e) => handleChange('propietario', 'telefono_celular', e.target.value)} required /></Col>
-          </Row></div></div>
+          {/* Información de la cita */}
+          <div className="bg-light p-3 rounded mb-4">
+            <h6 className="mb-3">Información de la Cita</h6>
+            <Row>
+              <Col md={6}>
+                <small className="text-muted">Fecha:</small>
+                <p className="mb-2"><strong>{cita?.fecha}</strong> - {cita?.hora}</p>
+              </Col>
+              <Col md={6}>
+                <small className="text-muted">Cliente:</small>
+                <p className="mb-2"><strong>{cita?.id_cliente?.nombre}</strong></p>
+              </Col>
+              <Col md={6}>
+                <small className="text-muted">Servicio:</small>
+                <p className="mb-2"><strong>{cita?.servicio}</strong></p>
+              </Col>
+              <Col md={6}>
+                <small className="text-muted">Motivo:</small>
+                <p className="mb-2"><strong>{cita?.motivo}</strong></p>
+              </Col>
+            </Row>
+          </div>
 
-          <div className="card mb-3"><div className="card-header bg-dark text-white">DATOS DEL PACIENTE</div><div className="card-body"><Row>
-            <Col md="4"><Form.Label>Nombre</Form.Label><Form.Control value={formData.paciente.nombre} onChange={(e) => handleChange('paciente', 'nombre', e.target.value)} required /></Col>
-            <Col md="4"><Form.Label>Especie</Form.Label><Form.Control value={formData.paciente.especie} onChange={(e) => handleChange('paciente', 'especie', e.target.value)} required /></Col>
-            <Col md="4"><Form.Label>Raza</Form.Label><Form.Control value={formData.paciente.raza} onChange={(e) => handleChange('paciente', 'raza', e.target.value)} /></Col>
-            <Col md="3"><Form.Label>Sexo</Form.Label><Form.Select value={formData.paciente.sexo} onChange={(e) => handleChange('paciente', 'sexo', e.target.value)}><option value="Macho">Macho</option><option value="Hembra">Hembra</option></Form.Select></Col>
-            <Col md="3"><Form.Label>Peso (gr)</Form.Label><Form.Control type="number" value={formData.paciente.peso_gr} onChange={(e) => handleChange('paciente', 'peso_gr', e.target.value)} /></Col>
-            <Col md="3"><Form.Label>Color</Form.Label><Form.Control value={formData.paciente.color_pelaje} onChange={(e) => handleChange('paciente', 'color_pelaje', e.target.value)} /></Col>
-          </Row></div></div>
+          <h6 className="mb-3 text-primary">
+            <FaPaw className="me-2" /> Datos del Paciente
+          </h6>
+          <Row className="mb-3">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>Nombre del Paciente *</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="paciente"
+                  value={formData.paciente}
+                  onChange={handleChange}
+                  placeholder="Ej: Max, Luna, Rocky"
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Especie</Form.Label>
+                <Form.Select name="especie" value={formData.especie} onChange={handleChange}>
+                  <option value="Canino">Canino (Perro)</option>
+                  <option value="Felino">Felino (Gato)</option>
+                  <option value="Ave">Ave</option>
+                  <option value="Roedor">Roedor</option>
+                  <option value="Reptil">Reptil</option>
+                  <option value="Otro">Otro</option>
+                </Form.Select>
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+              <Form.Group>
+                <Form.Label>Raza</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="raza"
+                  value={formData.raza}
+                  onChange={handleChange}
+                  placeholder="Ej: Labrador, Persa"
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-          <div className="card mb-3"><div className="card-header bg-dark text-white">SIGNOS VITALES</div><div className="card-body"><Row>
-            <Col md="3"><Form.Label>Temperatura (°C)</Form.Label><Form.Control type="number" step="0.1" value={formData.temperatura} onChange={(e) => setFormData({ ...formData, temperatura: e.target.value })} /></Col>
-            <Col md="3"><Form.Label>Peso (kg)</Form.Label><Form.Control type="number" step="0.1" value={formData.peso} onChange={(e) => setFormData({ ...formData, peso: e.target.value })} /></Col>
-            <Col md="3"><Form.Label>Frec. Cardíaca</Form.Label><Form.Control type="number" value={formData.frecuencia_cardiaca} onChange={(e) => setFormData({ ...formData, frecuencia_cardiaca: e.target.value })} /></Col>
-            <Col md="3"><Form.Label>Frec. Respiratoria</Form.Label><Form.Control type="number" value={formData.frecuencia_respiratoria} onChange={(e) => setFormData({ ...formData, frecuencia_respiratoria: e.target.value })} /></Col>
-          </Row></div></div>
+          <Row className="mb-3">
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Edad</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="edad"
+                  value={formData.edad}
+                  onChange={handleChange}
+                  placeholder="Ej: 2 años, 6 meses"
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Peso (kg)</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.1"
+                  name="peso"
+                  value={formData.peso}
+                  onChange={handleChange}
+                  placeholder="Ej: 15.5"
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group>
+                <Form.Label>Temperatura (°C)</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.1"
+                  name="temperatura"
+                  value={formData.temperatura}
+                  onChange={handleChange}
+                  placeholder="Ej: 38.5"
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-          <div className="card mb-3"><div className="card-header bg-dark text-white">CONSULTA</div><div className="card-body">
-            <Form.Group className="mb-3"><Form.Label>Motivo</Form.Label><Form.Control as="textarea" rows={2} value={formData.motivo_consulta} onChange={(e) => setFormData({ ...formData, motivo_consulta: e.target.value })} required /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Síntomas</Form.Label><Form.Control as="textarea" rows={2} value={formData.sintomas} onChange={(e) => setFormData({ ...formData, sintomas: e.target.value })} /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Diagnóstico</Form.Label><Form.Control as="textarea" rows={2} value={formData.diagnostico} onChange={(e) => setFormData({ ...formData, diagnostico: e.target.value })} required /></Form.Group>
-            <Form.Group className="mb-3"><Form.Label>Tratamiento</Form.Label><Form.Control as="textarea" rows={2} value={formData.tratamiento} onChange={(e) => setFormData({ ...formData, tratamiento: e.target.value })} required /></Form.Group>
-            <Form.Group><Form.Label>Observaciones</Form.Label><Form.Control as="textarea" rows={2} value={formData.observaciones} onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })} /></Form.Group>
-          </div></div>
+          <h6 className="mb-3 text-primary mt-3">
+            <FaStethoscope className="me-2" /> Datos Clínicos
+          </h6>
+          
+          <Form.Group className="mb-3">
+            <Form.Label>Diagnóstico *</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              name="diagnostico"
+              value={formData.diagnostico}
+              onChange={handleChange}
+              placeholder="Describa el diagnóstico del paciente..."
+              required
+            />
+          </Form.Group>
 
-          <div className="card mb-3"><div className="card-header bg-dark text-white d-flex justify-content-between"><span>MEDICAMENTOS</span><Button type="button" size="sm" variant="light" onClick={addMedicamento}>+ Agregar</Button></div><div className="card-body">
-            {formData.medicamentos.map((med, idx) => (<Row key={idx} className="mb-2"><Col md="4"><Form.Control placeholder="Nombre" value={med.nombre} onChange={(e) => handleMedicamentoChange(idx, 'nombre', e.target.value)} /></Col><Col md="2"><Form.Control placeholder="Dosis" value={med.dosis} onChange={(e) => handleMedicamentoChange(idx, 'dosis', e.target.value)} /></Col><Col md="2"><Form.Control placeholder="Frecuencia" value={med.frecuencia} onChange={(e) => handleMedicamentoChange(idx, 'frecuencia', e.target.value)} /></Col><Col md="3"><Form.Control placeholder="Duración" value={med.duracion} onChange={(e) => handleMedicamentoChange(idx, 'duracion', e.target.value)} /></Col><Col md="1"><Button variant="danger" size="sm" onClick={() => removeMedicamento(idx)}><i className="fas fa-trash"></i></Button></Col></Row>))}
-          </div></div>
+          <Form.Group className="mb-3">
+            <Form.Label>Tratamiento *</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              name="tratamiento"
+              value={formData.tratamiento}
+              onChange={handleChange}
+              placeholder="Indique el tratamiento a seguir..."
+              required
+            />
+          </Form.Group>
 
-          <div className="card mb-3"><div className="card-header bg-dark text-white">PRÓXIMA CITA</div><div className="card-body"><Row>
-            <Col md="6"><Form.Label>Fecha</Form.Label><Form.Control type="datetime-local" onChange={(e) => setFormData({ ...formData, proxima_cita: { ...formData.proxima_cita, fecha: e.target.value } })} /></Col>
-            <Col md="6"><Form.Label>Motivo</Form.Label><Form.Control onChange={(e) => setFormData({ ...formData, proxima_cita: { ...formData.proxima_cita, motivo: e.target.value } })} /></Col>
-          </Row></div></div>
+          <Form.Group className="mb-3">
+            <Form.Label>Medicamentos Recetados</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              name="medicamentos"
+              value={formData.medicamentos}
+              onChange={handleChange}
+              placeholder="Lista de medicamentos, dosis y frecuencia..."
+            />
+          </Form.Group>
 
-          <div className="card mb-3"><div className="card-header bg-dark text-white">PROFESIONAL</div><div className="card-body"><Row>
-            <Col md="6"><Form.Label>Nombre</Form.Label><Form.Control value={formData.profesional_nombre} onChange={(e) => setFormData({ ...formData, profesional_nombre: e.target.value })} required /></Col>
-            <Col md="6"><Form.Label>Matrícula</Form.Label><Form.Control value={formData.profesional_matricula} onChange={(e) => setFormData({ ...formData, profesional_matricula: e.target.value })} required /></Col>
-          </Row></div></div>
+          <Form.Group className="mb-3">
+            <Form.Label>Observaciones</Form.Label>
+            <Form.Control
+              as="textarea"
+              rows={2}
+              name="observaciones"
+              value={formData.observaciones}
+              onChange={handleChange}
+              placeholder="Notas adicionales, recomendaciones, seguimiento..."
+            />
+          </Form.Group>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={onHide}>Cancelar</Button>
-          <Button type="submit" variant="dark" disabled={loading}>{loading ? 'Guardando...' : 'Guardar'}</Button>
+          <Button variant="secondary" onClick={onHide}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={loading}>
+            <FaSave className="me-2" />
+            {loading ? 'Guardando...' : 'Guardar Historia Clínica'}
+          </Button>
         </Modal.Footer>
       </Form>
     </Modal>
   );
 };
 
-export default HistoriaClinicaModal;
+export default AtenderCitaModal;

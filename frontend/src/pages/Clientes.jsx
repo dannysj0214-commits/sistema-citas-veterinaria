@@ -3,8 +3,8 @@ import { Table, Button, Modal, Form, Toast, ToastContainer } from 'react-bootstr
 import { FaEdit, FaTrash, FaUserPlus } from 'react-icons/fa';
 import axios from 'axios';
 
-// FORZAR URL DEL BACKEND EN RENDER
-const API_URL = 'https://sistema-citas-api.onrender.com/api';
+// FORZAR URL DEL BACKEND EN LOCALHOST
+const API_URL = 'http://localhost:5000/api';
 
 const Clientes = () => {
   const [clientes, setClientes] = useState([]);
@@ -220,7 +220,6 @@ const Clientes = () => {
           </table>
         </div>
 
-        {/* Modal para agregar/editar */}
         <Modal show={showModal} onHide={() => setShowModal(false)}>
           <Modal.Header closeButton>
             <Modal.Title>{editMode ? 'Editar Cliente' : 'Agregar Cliente'}</Modal.Title>
@@ -275,24 +274,15 @@ const Clientes = () => {
             </Form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
-              Cancelar
-            </Button>
-            <Button variant="primary" onClick={handleGuardar}>
-              {editMode ? 'Actualizar' : 'Guardar'}
-            </Button>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancelar</Button>
+            <Button variant="primary" onClick={handleGuardar}>{editMode ? 'Actualizar' : 'Guardar'}</Button>
           </Modal.Footer>
         </Modal>
 
-        {/* Toast para mensajes */}
         <ToastContainer position="top-end" className="p-3">
           <Toast show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide bg={toastVariant}>
-            <Toast.Header>
-              <strong className="me-auto">Notificación</strong>
-            </Toast.Header>
-            <Toast.Body className={toastVariant === 'danger' ? 'text-white' : ''}>
-              {toastMessage}
-            </Toast.Body>
+            <Toast.Header><strong className="me-auto">Notificación</strong></Toast.Header>
+            <Toast.Body>{toastMessage}</Toast.Body>
           </Toast>
         </ToastContainer>
       </div>

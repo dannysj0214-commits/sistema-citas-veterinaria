@@ -3,8 +3,8 @@ import { Card, Button, Table, Modal, Form, Row, Col, Alert, Badge } from 'react-
 import { FaPlus, FaEdit, FaTrash, FaClock, FaCalendarWeek } from 'react-icons/fa';
 import axios from 'axios';
 
-// FORZAR URL DEL BACKEND EN RENDER
-const API_URL = 'https://sistema-citas-api.onrender.com/api';
+// FORZAR URL DEL BACKEND EN LOCALHOST
+const API_URL = 'http://localhost:5000/api';
 
 const HorariosProfesional = ({ profesionalId, token }) => {
   const [horarios, setHorarios] = useState([]);
@@ -38,7 +38,7 @@ const HorariosProfesional = ({ profesionalId, token }) => {
     try {
       setLoading(true);
       setError('');
-      console.log('🔵 Cargando horarios desde:', `${API_URL}/availability/mis-horarios`);
+      console.log('🔵 Cargando horarios...');
       const response = await axios.get(`${API_URL}/availability/mis-horarios`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -74,22 +74,48 @@ const HorariosProfesional = ({ profesionalId, token }) => {
   };
 
   const handleSave = async () => {
+    // Validar datos
+    if (!formData.hora_inicio || !formData.hora_fin) {
+      setError('La hora de inicio y fin son requeridas');
+      return;
+    }
+
     try {
       setLoading(true);
+      setError('');
+      
+      console.log('📝 Guardando horario:', formData);
+      console.log('🔑 Token:', token ? 'Presente' : 'No hay token');
+      
       const response = await axios.post(`${API_URL}/availability`, formData, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+
+      console.log('✅ Respuesta:', response.data);
 
       if (response.data.success) {
         setSuccess('Horario guardado correctamente');
         cargarHorarios();
         setShowModal(false);
         setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(response.data.message || 'Error al guardar');
       }
     } catch (error) {
-      console.error('Error guardando horario:', error);
-      setError(error.response?.data?.message || 'Error al guardar el horario');
-      setTimeout(() => setError(''), 3000);
+      console.error('❌ Error guardando horario:', error);
+      console.error('Status:', error.response?.status);
+      console.error('Data:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        setError('Sesión expirada. Por favor, inicie sesión nuevamente.');
+      } else if (error.response?.status === 400) {
+        setError(error.response.data?.message || 'Datos inválidos');
+      } else {
+        setError(error.response?.data?.message || 'Error al guardar el horario');
+      }
     } finally {
       setLoading(false);
     }
@@ -153,7 +179,7 @@ const HorariosProfesional = ({ profesionalId, token }) => {
                     <td style={{ color: '#fff' }}><strong>{getDiaNombre(horario.dia_semana)}</strong></td>
                     <td style={{ color: '#fff' }}>{horario.hora_inicio}</td>
                     <td style={{ color: '#fff' }}>{horario.hora_fin}</td>
-                    <td style={{ color: '#fff' }}><Badge bg="primary">90 minutos</Badge></td>
+                    <td><Badge bg="primary">90 minutos</Badge></td>
                     <td>
                       <Button 
                         variant="warning" 
@@ -187,7 +213,6 @@ const HorariosProfesional = ({ profesionalId, token }) => {
         </div>
       </Card.Body>
 
-      {/* Modal para agregar/editar horario */}
       <Modal show={showModal} onHide={() => setShowModal(false)} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>{editMode ? 'Editar Horario' : 'Agregar Horario'}</Modal.Title>

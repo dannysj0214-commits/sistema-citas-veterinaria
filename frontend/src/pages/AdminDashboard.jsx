@@ -7,8 +7,8 @@ import { FaUsers, FaUserMd, FaCalendarCheck, FaClipboardList } from 'react-icons
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
-// FORZAR LA URL DEL BACKEND EN RENDER
-const API_URL = 'https://sistema-citas-api.onrender.com/api';
+// FORZAR LA URL DEL BACKEND EN LOCALHOST
+const API_URL = 'http://localhost:5000/api';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -31,7 +31,7 @@ const AdminDashboard = () => {
       setError('');
       
       console.log('🔵 Cargando datos de admin...');
-      console.log('🔗 API_URL (FORZADA):', API_URL);
+      console.log('🔗 API_URL:', API_URL);
       
       const token = localStorage.getItem('token');
       console.log('🔑 Token usado en petición:', token ? `${token.substring(0, 30)}...` : 'NO HAY TOKEN');
@@ -83,7 +83,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Preparar datos para gráfico de pastel
   const pieData = {
     labels: citasPorEstado.length > 0 
       ? citasPorEstado.map(item => {
@@ -108,7 +107,6 @@ const AdminDashboard = () => {
     ],
   };
 
-  // Preparar datos para gráfico de barras
   const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
   const citasPorMesData = new Array(12).fill(0);
   
