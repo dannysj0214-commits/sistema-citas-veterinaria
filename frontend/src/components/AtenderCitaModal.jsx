@@ -7,35 +7,219 @@ const AtenderCitaModal = ({ show, onHide, cita, onCitaAtendida }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [formData, setFormData] = useState({ paciente: '', especie: 'Canino', raza: '', edad: '', peso: '', temperatura: '', diagnostico: '', tratamiento: '', medicamentos: '', observaciones: '' });
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+  const [formData, setFormData] = useState({
+    paciente: '',
+    especie: 'Canino',
+    raza: '',
+    edad: '',
+    peso: '',
+    temperatura: '',
+    diagnostico: '',
+    tratamiento: '',
+    medicamentos: '',
+    observaciones: ''
+  });
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.paciente) return setError('Nombre del paciente requerido');
     if (!formData.diagnostico) return setError('Diagnóstico requerido');
     if (!formData.tratamiento) return setError('Tratamiento requerido');
+    
     setLoading(true);
+    setError('');
+    setSuccess('');
+    
     try {
-      await api.post('/medical-records', { propietario: cita?.id_cliente?.nombre || '', paciente: formData.paciente, especie: formData.especie, raza: formData.raza, edad: formData.edad, peso: formData.peso, temperatura: formData.temperatura, diagnostico: formData.diagnostico, tratamiento: formData.tratamiento, medicamentos: formData.medicamentos, observaciones: formData.observaciones, cliente_id: cita?.id_cliente?._id, appointment_id: cita?._id });
-      await api.put(`/appointments/${cita._id}/estado`, { estado: 'completada' });
-      setSuccess('Historia guardada');
-      setTimeout(() => { onCitaAtendida(); onHide(); }, 1500);
-    } catch (err) { setError(err.response?.data?.message || 'Error'); } finally { setLoading(false); }
+      // Crear historia clínica con el nombre del profesional que atiende
+      const response = await api.post('/medical-records', {
+        propietario: cita?.id_cliente?.nombre || '',
+        paciente: formData.paciente,
+        especie: formData.especie,
+        raza: formData.raza,
+        edad: formData.edad,
+        peso: formData.peso,
+        temperatura: formData.temperatura,
+        diagnostico: formData.diagnostico,
+        tratamiento: formData.tratamiento,
+        medicamentos: formData.medicamentos,
+        observaciones: formData.observaciones,
+        cliente_id: cita?.id_cliente?._id,
+        appointment_id: cita?._id,
+        profesional: user.nombre  // ← NOMBRE DEL DOCTOR QUE ATIENDE
+      });
+      
+      if (response.data.success) {
+        setSuccess('Historia clínica guardada exitosamente');
+        
+        // Actualizar estado de la cita a completada
+        await api.put(`/appointments/${cita._id}/estado`, { estado: 'completada' });
+        
+        setTimeout(() => {
+          onCitaAtendida();
+          onHide();
+        }, 1500);
+      }
+    } catch (err) { 
+      setError(err.response?.data?.message || 'Error al guardar la historia clínica');
+    } finally { 
+      setLoading(false); 
+    }
   };
 
   return (
-    <Modal show={show} onHide={onHide} size="lg"><Modal.Header closeButton><Modal.Title><FaFilePdf /> Atención de Cita</Modal.Title></Modal.Header>
-      <Form onSubmit={handleSubmit}><Modal.Body>{error && <Alert variant="danger">{error}</Alert>}{success && <Alert variant="success">{success}</Alert>}
-        <div className="bg-light p-3 rounded mb-3"><h6>Información de la Cita</h6><Row><Col><small>Fecha:</small><p><strong>{cita?.fecha}</strong> - {cita?.hora}</p></Col><Col><small>Cliente:</small><p><strong>{cita?.id_cliente?.nombre}</strong></p></Col></Row></div>
-        <h6><FaPaw /> Datos del Paciente</h6><Row><Col md={6}><Form.Control className="mb-2" placeholder="Nombre del paciente *" value={formData.paciente} onChange={e => setFormData({ ...formData, paciente: e.target.value })} required /></Col>
-        <Col md={3}><Form.Select value={formData.especie} onChange={e => setFormData({ ...formData, especie: e.target.value })}><option>Canino</option><option>Felino</option><option>Ave</option></Form.Select></Col>
-        <Col md={3}><Form.Control placeholder="Raza" value={formData.raza} onChange={e => setFormData({ ...formData, raza: e.target.value })} /></Col></Row>
-        <Row><Col><Form.Control className="mb-2" placeholder="Edad" value={formData.edad} onChange={e => setFormData({ ...formData, edad: e.target.value })} /></Col><Col><Form.Control className="mb-2" placeholder="Peso (kg)" value={formData.peso} onChange={e => setFormData({ ...formData, peso: e.target.value })} /></Col><Col><Form.Control className="mb-2" placeholder="Temperatura (°C)" value={formData.temperatura} onChange={e => setFormData({ ...formData, temperatura: e.target.value })} /></Col></Row>
-        <h6 className="mt-3"><FaStethoscope /> Datos Clínicos</h6><Form.Control as="textarea" rows={2} className="mb-2" placeholder="Diagnóstico *" value={formData.diagnostico} onChange={e => setFormData({ ...formData, diagnostico: e.target.value })} required />
-        <Form.Control as="textarea" rows={2} className="mb-2" placeholder="Tratamiento *" value={formData.tratamiento} onChange={e => setFormData({ ...formData, tratamiento: e.target.value })} required />
-        <Form.Control as="textarea" rows={2} className="mb-2" placeholder="Medicamentos" value={formData.medicamentos} onChange={e => setFormData({ ...formData, medicamentos: e.target.value })} />
-        <Form.Control as="textarea" rows={2} placeholder="Observaciones" value={formData.observaciones} onChange={e => setFormData({ ...formData, observaciones: e.target.value })} />
-      </Modal.Body><Modal.Footer><Button variant="secondary" onClick={onHide}>Cancelar</Button><Button type="submit" variant="primary" disabled={loading}><FaSave /> {loading ? 'Guardando...' : 'Guardar'}</Button></Modal.Footer></Form>
+    <Modal show={show} onHide={onHide} size="lg">
+      <Modal.Header closeButton style={{ backgroundColor: '#1a1a1a', color: '#d4a017', borderBottom: '1px solid #333' }}>
+        <Modal.Title style={{ color: '#d4a017' }}>
+          <FaFilePdf className="me-2" /> Atención de Cita - Historia Clínica
+        </Modal.Title>
+      </Modal.Header>
+      <Form onSubmit={handleSubmit}>
+        <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto', backgroundColor: '#111111' }}>
+          {error && <Alert variant="danger">{error}</Alert>}
+          {success && <Alert variant="success">{success}</Alert>}
+          
+          <div style={{ backgroundColor: '#1a1a1a', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
+            <h6 style={{ color: '#d4a017' }}>Información de la Cita</h6>
+            <Row>
+              <Col md={6}>
+                <small className="text-muted">Fecha:</small>
+                <p style={{ color: '#fff' }}><strong>{cita?.fecha}</strong> - {cita?.hora}</p>
+              </Col>
+              <Col md={6}>
+                <small className="text-muted">Cliente:</small>
+                <p style={{ color: '#fff' }}><strong>{cita?.id_cliente?.nombre}</strong></p>
+              </Col>
+            </Row>
+          </div>
+          
+          <h6 style={{ color: '#d4a017' }}><FaPaw /> Datos del Paciente</h6>
+          <Row className="mb-3">
+            <Col md={6}>
+              <Form.Control 
+                className="mb-2" 
+                name="paciente"
+                placeholder="Nombre del paciente *" 
+                value={formData.paciente} 
+                onChange={handleChange} 
+                required 
+                style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+              />
+            </Col>
+            <Col md={3}>
+              <Form.Select 
+                name="especie"
+                value={formData.especie} 
+                onChange={handleChange}
+                style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+              >
+                <option value="Canino">Canino</option>
+                <option value="Felino">Felino</option>
+                <option value="Ave">Ave</option>
+              </Form.Select>
+            </Col>
+            <Col md={3}>
+              <Form.Control 
+                name="raza"
+                placeholder="Raza" 
+                value={formData.raza} 
+                onChange={handleChange} 
+                style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+              />
+            </Col>
+          </Row>
+          
+          <Row className="mb-3">
+            <Col md={4}>
+              <Form.Control 
+                name="edad"
+                placeholder="Edad" 
+                value={formData.edad} 
+                onChange={handleChange} 
+                style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+              />
+            </Col>
+            <Col md={4}>
+              <Form.Control 
+                name="peso"
+                type="number"
+                placeholder="Peso (kg)" 
+                value={formData.peso} 
+                onChange={handleChange} 
+                style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+              />
+            </Col>
+            <Col md={4}>
+              <Form.Control 
+                name="temperatura"
+                type="number"
+                placeholder="Temperatura (°C)" 
+                value={formData.temperatura} 
+                onChange={handleChange} 
+                style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+              />
+            </Col>
+          </Row>
+          
+          <h6 className="mt-3" style={{ color: '#d4a017' }}><FaStethoscope /> Datos Clínicos</h6>
+          <Form.Control 
+            as="textarea" 
+            rows={2} 
+            className="mb-2" 
+            name="diagnostico"
+            placeholder="Diagnóstico *" 
+            value={formData.diagnostico} 
+            onChange={handleChange} 
+            required 
+            style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+          />
+          <Form.Control 
+            as="textarea" 
+            rows={2} 
+            className="mb-2" 
+            name="tratamiento"
+            placeholder="Tratamiento *" 
+            value={formData.tratamiento} 
+            onChange={handleChange} 
+            required 
+            style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+          />
+          <Form.Control 
+            as="textarea" 
+            rows={2} 
+            className="mb-2" 
+            name="medicamentos"
+            placeholder="Medicamentos" 
+            value={formData.medicamentos} 
+            onChange={handleChange} 
+            style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+          />
+          <Form.Control 
+            as="textarea" 
+            rows={2} 
+            name="observaciones"
+            placeholder="Observaciones" 
+            value={formData.observaciones} 
+            onChange={handleChange} 
+            style={{ backgroundColor: '#1a1a1a', borderColor: '#333', color: '#fff' }}
+          />
+        </Modal.Body>
+        <Modal.Footer style={{ backgroundColor: '#1a1a1a', borderTop: '1px solid #333' }}>
+          <Button variant="secondary" onClick={onHide}>Cancelar</Button>
+          <Button type="submit" variant="primary" disabled={loading} style={{ backgroundColor: '#d4a017', border: 'none' }}>
+            <FaSave /> {loading ? 'Guardando...' : 'Guardar'}
+          </Button>
+        </Modal.Footer>
+      </Form>
     </Modal>
   );
 };
