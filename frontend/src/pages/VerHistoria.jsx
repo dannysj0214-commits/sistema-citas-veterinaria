@@ -10,12 +10,15 @@ const VerHistoria = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [historia, setHistoria] = useState(null);
+  const [veterinario, setVeterinario] = useState(null); // Estado para el veterinario
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const token = localStorage.getItem('token');
 
-  // Datos de la clínica (solo para contacto, no para el veterinario)
-  const clinicaData = {
+  // Datos de la clínica (estáticos)
+  const clinicData = {
+    nombre: 'CLÍNICA VETERINARIA',
+    lema: '"La Voz de los que no tienen voz"',
     telefono: '301 234 5678',
     email: 'dannysj0214@gmail.com',
     direccion: 'Calle 123 #45-67, Bogotá, Colombia'
@@ -32,6 +35,20 @@ const VerHistoria = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       setHistoria(response.data.data);
+      
+      // Si la historia tiene veterinario_id, carga los datos del veterinario
+      if (response.data.data?.veterinario_id) {
+        await cargarVeterinario(response.data.data.veterinario_id);
+      } else {
+        // Si no hay veterinario_id, usa el usuario actual como fallback
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        setVeterinario({
+          nombre: user.nombre || 'Veterinario no registrado',
+          titulo: 'Médico Veterinario',
+          registro: user.registro_profesional || 'No registrado'
+        });
+      }
+      
     } catch (error) {
       console.error('Error:', error);
       setError('No se pudo cargar la historia clínica');
@@ -40,8 +57,37 @@ const VerHistoria = () => {
     }
   };
 
+  // Función para cargar los datos del veterinario desde el backend
+  const cargarVeterinario = async (veterinarioId) => {
+    try {
+      const response = await axios.get(`${API_URL}/users/${veterinarioId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const userData = response.data.data || response.data;
+      setVeterinario({
+        nombre: userData.nombre || userData.name || 'Veterinario',
+        titulo: 'Médico Veterinario',
+        registro: userData.registro_profesional || userData.license_number || 'MVP-78945',
+        telefono: userData.telefono || clinicData.telefono,
+        email: userData.email || clinicData.email
+      });
+    } catch (error) {
+      console.error('Error cargando veterinario:', error);
+      // Fallback: datos por defecto si no se puede cargar
+      setVeterinario({
+        nombre: historia?.veterinario_nombre || 'Veterinario asignado',
+        titulo: 'Médico Veterinario',
+        registro: 'Registro no disponible'
+      });
+    }
+  };
+
   const handleImprimir = () => {
-    // Crear una ventana nueva para imprimir
+    if (!veterinario) {
+      setError('Cargando datos del veterinario...');
+      return;
+    }
+
     const ventana = window.open('', '_blank');
     ventana.document.write(`
       <!DOCTYPE html>
@@ -50,163 +96,50 @@ const VerHistoria = () => {
         <title>Historia Clínica - Veterinaria</title>
         <meta charset="utf-8">
         <style>
-          * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-          }
-          body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: white;
-            padding: 40px;
-          }
-          .historia-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            background: white;
-          }
-          .header {
-            text-align: center;
-            border-bottom: 3px solid #1a1a1a;
-            padding-bottom: 20px;
-            margin-bottom: 25px;
-          }
-          .header h1 {
-            font-size: 24px;
-            font-weight: bold;
-            margin: 0;
-            color: #1a1a1a;
-          }
-          .header h2 {
-            font-size: 14px;
-            font-style: italic;
-            margin: 5px 0;
-            color: #333;
-          }
-          .header .contacto {
-            font-size: 10px;
-            color: #555;
-            margin-top: 8px;
-          }
-          .titulo {
-            text-align: center;
-            background: #f0f0f0;
-            padding: 10px;
-            margin: 20px 0;
-            border: 1px solid #ddd;
-          }
-          .titulo h3 {
-            font-size: 16px;
-            font-weight: bold;
-            margin: 0;
-            color: #1a1a1a;
-          }
-          .titulo p {
-            font-size: 12px;
-            margin: 5px 0 0;
-            color: #555;
-          }
-          .seccion {
-            margin-bottom: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            overflow: hidden;
-          }
-          .seccion-titulo {
-            background: #1a1a1a;
-            color: white;
-            padding: 8px 12px;
-            font-size: 13px;
-            font-weight: bold;
-          }
-          .tabla-datos {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          .tabla-datos td {
-            padding: 8px 12px;
-            border-bottom: 1px solid #eee;
-          }
-          .tabla-datos .label {
-            width: 25%;
-            font-weight: bold;
-            background: #f9f9f9;
-            color: #333;
-          }
-          .tabla-datos .valor {
-            width: 25%;
-            color: #1a1a1a;
-          }
-          .caja-texto {
-            padding: 12px;
-            background: #f9f9f9;
-            min-height: 60px;
-            color: #1a1a1a;
-            line-height: 1.5;
-          }
-          .firmas {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #ddd;
-          }
-          .firma {
-            text-align: center;
-            width: 45%;
-          }
-          .firma .linea {
-            margin-bottom: 10px;
-            font-size: 14px;
-          }
-          .firma .texto {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 5px;
-          }
-          .firma .cc {
-            font-size: 10px;
-            color: #555;
-          }
-          .footer {
-            text-align: center;
-            margin-top: 30px;
-            padding-top: 15px;
-            border-top: 1px solid #ddd;
-            font-size: 9px;
-            color: #666;
-          }
-          .footer p {
-            margin: 3px 0;
-          }
-          @media print {
-            body {
-              padding: 0;
-            }
-            @page {
-              size: letter;
-              margin: 1.5cm;
-            }
-          }
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: white; padding: 40px; }
+          .historia-container { max-width: 1000px; margin: 0 auto; background: white; }
+          .header { text-align: center; border-bottom: 3px solid #1a1a1a; padding-bottom: 20px; margin-bottom: 25px; }
+          .header h1 { font-size: 24px; font-weight: bold; margin: 0; color: #1a1a1a; }
+          .header h2 { font-size: 14px; font-style: italic; margin: 5px 0; color: #333; }
+          .header .contacto { font-size: 10px; color: #555; margin-top: 8px; }
+          .titulo { text-align: center; background: #f0f0f0; padding: 10px; margin: 20px 0; border: 1px solid #ddd; }
+          .titulo h3 { font-size: 16px; font-weight: bold; margin: 0; color: #1a1a1a; }
+          .titulo p { font-size: 12px; margin: 5px 0 0; color: #555; }
+          .seccion { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 5px; overflow: hidden; }
+          .seccion-titulo { background: #1a1a1a; color: white; padding: 8px 12px; font-size: 13px; font-weight: bold; }
+          .tabla-datos { width: 100%; border-collapse: collapse; }
+          .tabla-datos td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+          .tabla-datos .label { width: 25%; font-weight: bold; background: #f9f9f9; color: #333; }
+          .tabla-datos .valor { width: 25%; color: #1a1a1a; }
+          .caja-texto { padding: 12px; background: #f9f9f9; min-height: 60px; color: #1a1a1a; line-height: 1.5; }
+          .firmas { display: flex; justify-content: space-between; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; }
+          .firma { text-align: center; width: 45%; }
+          .firma .linea { margin-bottom: 10px; font-size: 14px; }
+          .firma .texto { font-weight: bold; font-size: 12px; margin-bottom: 5px; }
+          .firma .cc { font-size: 10px; color: #555; }
+          .footer { text-align: center; margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 9px; color: #666; }
+          .footer p { margin: 3px 0; }
+          @media print { body { padding: 0; } @page { size: letter; margin: 1.5cm; } }
         </style>
       </head>
       <body>
         <div class="historia-container">
           <div class="header">
-            <h1>CLÍNICA VETERINARIA</h1>
-            <h2>"La Voz de los que no tienen voz"</h2>
+            <h1>${clinicData.nombre}</h1>
+            <h2>${clinicData.lema}</h2>
             <div class="contacto">
-              Tel: ${clinicaData.telefono} | Email: ${clinicaData.email} | ${clinicaData.direccion}
+              Tel: ${clinicData.telefono} | Email: ${clinicData.email} | ${clinicData.direccion}
             </div>
           </div>
           <div class="titulo">
             <h3>HISTORIA CLÍNICA</h3>
-            <p>N° ${historia?.hc_numero}</p>
+            <p>N° ${historia?.hc_numero || 'N/A'}</p>
           </div>
           <div class="seccion">
             <div class="seccion-titulo">📋 DATOS DEL PROPIETARIO</div>
             <table class="tabla-datos">
-              <tr><td class="label">Nombre:</td><td class="valor">${historia?.propietario}</td><td class="label">Fecha de Atención:</td><td class="valor">${new Date(historia?.fecha).toLocaleDateString()}</td></tr>
+              <tr><td class="label">Nombre:</td><td class="valor">${historia?.propietario || 'No registrado'}</td><td class="label">Fecha de Atención:</td><td class="valor">${new Date(historia?.fecha).toLocaleDateString()}</td></tr>
             </table>
           </div>
           <div class="seccion">
@@ -234,17 +167,20 @@ const VerHistoria = () => {
             <div class="seccion-titulo">📌 OBSERVACIONES</div>
             <div class="caja-texto">${historia?.observaciones}</div>
           </div>` : ''}
+          
+          <!-- SECCIÓN DEL VETERINARIO DINÁMICA -->
           <div class="seccion">
             <div class="seccion-titulo">👨‍⚕️ MÉDICO VETERINARIO</div>
             <table class="tabla-datos">
-              <tr><td class="label">Nombre:</td><td colspan="3"><strong>${historia?.profesional || 'No registrado'}</strong></td}</tr>
-              <tr><td class="label">Título:</td><td colspan="3">Médico Veterinario</td}</tr>
-              <tr><td class="label">Registro Médico:</td><td colspan="3">MVP-${historia?.hc_numero || '000000'}</td}</tr>
+              <tr><td class="label">Nombre:</td><td class="valor" colspan="3"><strong>${veterinario?.nombre || 'No registrado'}</strong></td></tr>
+              <tr><td class="label">Título:</td><td class="valor">${veterinario?.titulo || 'Médico Veterinario'}</td>
+                  <td class="label">Registro Médico:</td><td class="valor">${veterinario?.registro || 'No registrado'}</td></tr>
             </table>
           </div>
+          
           <div class="firmas">
             <div class="firma"><div class="linea">_________________________</div><div class="texto">Firma del Propietario</div><div class="cc">CC: ____________________</div></div>
-            <div class="firma"><div class="linea">_________________________</div><div class="texto">Firma y Sello del Veterinario</div><div class="cc">${historia?.profesional || ''}</div><div class="cc">Registro: MVP-${historia?.hc_numero || '000000'}</div></div>
+            <div class="firma"><div class="linea">_________________________</div><div class="texto">Firma y Sello del Veterinario</div><div class="cc">${veterinario?.nombre || 'Veterinario'}</div><div class="cc">Registro: ${veterinario?.registro || 'N/A'}</div></div>
           </div>
           <div class="footer">
             <p>Este documento es un registro médico válido según la ley 576 de 2000.</p>
@@ -287,9 +223,17 @@ const VerHistoria = () => {
     );
   }
 
+  if (!veterinario) {
+    return (
+      <Container className="mt-4">
+        <Alert variant="info">Cargando datos del veterinario...</Alert>
+        <Spinner animation="border" variant="primary" />
+      </Container>
+    );
+  }
+
   return (
     <Container fluid>
-      {/* Botones de acción */}
       <div className="d-flex justify-content-end align-items-center mb-4" style={{ gap: '10px' }}>
         <Button variant="secondary" onClick={() => navigate(-1)}>
           <FaArrowLeft className="me-2" /> Volver
@@ -299,7 +243,6 @@ const VerHistoria = () => {
         </Button>
       </div>
 
-      {/* Vista previa de la historia clínica */}
       <div className="historia-container" style={{ 
         maxWidth: '1000px', 
         margin: '0 auto', 
@@ -310,10 +253,10 @@ const VerHistoria = () => {
         borderRadius: '10px'
       }}>
         <div className="header" style={{ textAlign: 'center', borderBottom: '3px solid #1a1a1a', paddingBottom: '20px', marginBottom: '25px' }}>
-          <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>CLÍNICA VETERINARIA</h1>
-          <h2 style={{ fontSize: '14px', fontStyle: 'italic', margin: '5px 0' }}>"La Voz de los que no tienen voz"</h2>
+          <h1 style={{ fontSize: '24px', fontWeight: 'bold', margin: 0 }}>{clinicData.nombre}</h1>
+          <h2 style={{ fontSize: '14px', fontStyle: 'italic', margin: '5px 0' }}>{clinicData.lema}</h2>
           <div style={{ fontSize: '10px', color: '#555', marginTop: '8px' }}>
-            Tel: ${clinicaData.telefono} | Email: ${clinicaData.email} | ${clinicaData.direccion}
+            Tel: {clinicData.telefono} | Email: {clinicData.email} | {clinicData.direccion}
           </div>
         </div>
 
@@ -340,9 +283,9 @@ const VerHistoria = () => {
           <div className="seccion-titulo" style={{ background: '#1a1a1a', color: 'white', padding: '8px 12px', fontSize: '13px', fontWeight: 'bold' }}>🐾 DATOS DEL PACIENTE</div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
-              <td><td style={{ width: '25%', padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Nombre:</td><td style={{ width: '25%', padding: '8px 12px' }}><strong>{historia?.paciente}</strong></td><td style={{ width: '25%', padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Especie:</td><td style={{ width: '25%', padding: '8px 12px' }}>{historia?.especie || 'Canino'}</td></tr>
+              <tr><td style={{ width: '25%', padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Nombre:</td><td style={{ width: '25%', padding: '8px 12px' }}><strong>{historia?.paciente}</strong></td><td style={{ width: '25%', padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Especie:</td><td style={{ width: '25%', padding: '8px 12px' }}>{historia?.especie || 'Canino'}</td></tr>
               <tr><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Raza:</td><td style={{ padding: '8px 12px' }}>{historia?.raza || 'No registrada'}</td><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Edad:</td><td style={{ padding: '8px 12px' }}>{historia?.edad || 'No registrada'}</td></tr>
-              <tr><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Peso:</td><td style={{ padding: '8px 12px' }}>{historia?.peso || 'No registrado'} kg</td><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Temperatura:</td><td style={{ padding: '8px 12px' }}>{historia?.temperatura || 'No registrada'} °C</td}</tr>
+              <tr><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Peso:</td><td style={{ padding: '8px 12px' }}>{historia?.peso || 'No registrado'} kg</td><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Temperatura:</td><td style={{ padding: '8px 12px' }}>{historia?.temperatura || 'No registrada'} °C</td></tr>
             </tbody>
           </table>
         </div>
@@ -373,8 +316,8 @@ const VerHistoria = () => {
           <div className="seccion-titulo" style={{ background: '#1a1a1a', color: 'white', padding: '8px 12px', fontSize: '13px', fontWeight: 'bold' }}>👨‍⚕️ MÉDICO VETERINARIO</div>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
-              <tr><td style={{ width: '25%', padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Nombre:</td><td style={{ width: '75%', padding: '8px 12px' }} colSpan="3"><strong>{historia?.profesional || 'No registrado'}</strong></td}</tr>
-              <tr><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Título:</td><td style={{ padding: '8px 12px' }}>Médico Veterinario</td}还<td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Registro Médico:</td><td style={{ padding: '8px 12px' }}>MVP-${historia?.hc_numero || '000000'}</td}</tr>
+              <tr><td style={{ width: '25%', padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Nombre:</td><td style={{ width: '75%', padding: '8px 12px' }} colSpan="3"><strong>{veterinario?.nombre}</strong></td></tr>
+              <tr><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Título:</td><td style={{ padding: '8px 12px' }}>{veterinario?.titulo}</td><td style={{ padding: '8px 12px', fontWeight: 'bold', background: '#f9f9f9' }}>Registro Médico:</td><td style={{ padding: '8px 12px' }}>{veterinario?.registro}</td></tr>
             </tbody>
           </table>
         </div>
@@ -388,8 +331,8 @@ const VerHistoria = () => {
           <div style={{ textAlign: 'center', width: '45%' }}>
             <div style={{ marginBottom: '10px' }}>_________________________</div>
             <div style={{ fontWeight: 'bold', fontSize: '12px', marginBottom: '5px' }}>Firma y Sello del Veterinario</div>
-            <div style={{ fontSize: '10px', color: '#555' }}>{historia?.profesional || ''}</div>
-            <div style={{ fontSize: '10px', color: '#555' }}>Registro: MVP-${historia?.hc_numero || '000000'}</div>
+            <div style={{ fontSize: '10px', color: '#555' }}>{veterinario?.nombre}</div>
+            <div style={{ fontSize: '10px', color: '#555' }}>Registro: {veterinario?.registro}</div>
           </div>
         </div>
 
